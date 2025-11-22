@@ -3,3 +3,6 @@
 
 # 빌드 파일
 target/
+
+# vscode 설정파일
+.vscode
