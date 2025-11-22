@@ -95,7 +95,7 @@ public class HmsServer {
     private final List<String>allowedOrigins;
     
     /**
-     * PlanPServer 생성자
+     * HmsServer 생성자
      * <p>
      * 지정된 호스트와 포트에 HTTP 서버를 생성하고, API 라우트를 설정한다.
      * UserService를 주입받아 사용자 관련 API의 비즈니스 로직을 처리한다.
@@ -122,7 +122,7 @@ public class HmsServer {
         this.host = host;
         this.port = port;
         this.allowedOrigins = Arrays.asList(EnvironmentConfig.getAllowedOrigins());
-        logger.info("PlanP 서버 초기화 시작: {}:{}", host, port);
+        logger.info("HMS Server 초기화 시작: {}:{}", host, port);
         
         // HTTP 서버 생성 (백로그 큐 크기는 기본값 0 사용)
         this.server = HttpServer.create(new InetSocketAddress(host, port), 0);
@@ -183,20 +183,9 @@ public class HmsServer {
         loginContext.getFilters().add(corsFilter);
         logger.debug("로그인 API 설정: POST /api/users/login");
         
-        // // 사용자 ID 중복 확인 API
-        // HttpContext checkIdContext = server.createContext("/api/users/check-id", userController::handleCheckUserId);
-        // checkIdContext.getFilters().add(corsFilter);
-        // logger.debug("ID 중복 확인 API 설정: GET /api/users/check-id");
-        
-        // // 이메일 중복 확인 API
-        // HttpContext checkEmailContext = server.createContext("/api/users/check-email", userController::handleCheckEmail);
-        // checkEmailContext.getFilters().add(corsFilter);
-        // logger.debug("이메일 중복 확인 API 설정: GET /api/users/check-email");
-        
         // 라우트 설정 완료 로그
         logger.info("라우트 설정 완료:");
         logger.info("  ├─ GET  /health                    → HealthCheckHandler (헬스 체크)");
-        logger.info("  ├─ POST /api/users/signup          → UserController::handleSignup (회원가입)");
         logger.info("  └─ POST /api/users/login           → UserController::handleLogin (로그인)");
         logger.info("모든 API에 CORS 필터 적용 완료 (localhost 개발 환경 허용)");
     }
@@ -223,7 +212,7 @@ public class HmsServer {
         server.start();
         
         logger.info("╔══════════════════════════════════════════════════════════════╗");
-        logger.info("║                    PlanP 서버 시작 완료!                      ║");
+        logger.info("║                    HMS Server 시작 완료!                      ║");
         logger.info("╠══════════════════════════════════════════════════════════════╣");
         logger.info("║  서버 주소: http://{}:{}{}║", 
             host, port, " ".repeat(Math.max(1, 39 - (host + ":" + port).length())));
@@ -267,7 +256,7 @@ public class HmsServer {
         server.stop(SHUTDOWN_DELAY_SECONDS);
         
         logger.info("╔══════════════════════════════════════════════════════════════╗");
-        logger.info("║                    PlanP 서버 종료 완료                       ║");
+        logger.info("║                    HMS Server 서버 종료 완료                       ║");
         logger.info("║                                                              ║");
         logger.info("║  모든 요청 처리가 완료되었습니다.                              ║");
         logger.info("║  서버 리소스가 정리되었습니다.                                 ║");
@@ -320,7 +309,7 @@ public class HmsServer {
      */
     @Override
     public String toString() {
-        return String.format("PlanPServer{host='%s', port=%d, running=%s}", 
+        return String.format("HMS_Server{host='%s', port=%d, running=%s}", 
                            host, port, isRunning());
     }
 }

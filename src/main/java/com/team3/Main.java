@@ -52,7 +52,7 @@ public class Main {
      */
     private static final String STARTUP_BANNER = """
             ╔══════════════════════════════════════════════════════════════╗
-            ║                         PlanP 백엔드                          ║
+            ║                         HMS Server                          ║
             ║                     서버 시작 중...                           ║
             ╚══════════════════════════════════════════════════════════════╝
             """;
@@ -115,7 +115,7 @@ public class Main {
     public static void main(String[] args) {
         // 시작 배너 출력
         System.out.println(STARTUP_BANNER);
-        System.out.println("PlanP 백엔드 서버 초기화 중...\n");
+        System.out.println("HMS Server 초기화 중...\n");
 
         Dependencies dependencies;
         
@@ -224,7 +224,7 @@ public class Main {
      * 
      * <h4>환경변수:</h4>
      * <ul>
-     *   <li><code>PLANP_PORT</code>: 포트 번호 (예: 3000, 8080)</li>
+     *   <li><code>HMS_SERVER_PORT</code>: 포트 번호 (예: 3000, 8080)</li>
      * </ul>
      * 
      * @param args 커맨드라인 인수 배열
@@ -279,11 +279,11 @@ public class Main {
      * 
      * <h4>커맨드라인 사용법:</h4>
      * <pre>{@code
-     * java -jar planp-backend.jar [포트] [호스트]
+     * java -jar hms-server.jar [포트] [호스트]
      * 
      * 예시:
-     * java -jar planp-backend.jar 8080 localhost
-     * java -jar planp-backend.jar 3000 0.0.0.0
+     * java -jar hms-server.jar 8080 localhost
+     * java -jar hms-server.jar 3000 0.0.0.0
      * }</pre>
      * 
      * @param args 커맨드라인 인수 배열 (두 번째 인수로 호스트 지정 가능)
@@ -311,12 +311,12 @@ public class Main {
         String envHost = EnvironmentConfig.getHost();
         
         // 환경변수와 기본값 구분해서 로깅
-        String hostSource = System.getenv("PLANP_HOST");
+        String hostSource = System.getenv("HMS_SERVER_HOST");
         if (hostSource != null) {
             if ("0.0.0.0".equals(envHost)) {
-                System.out.println("환경변수 호스트 - 모든 IP 허용: " + envHost + " (PLANP_HOST)");
+                System.out.println("환경변수 호스트 - 모든 IP 허용: " + envHost + " (HMS_SERVER_HOST)");
             } else {
-                System.out.println("환경변수 호스트 사용: " + envHost + " (PLANP_HOST)");
+                System.out.println("환경변수 호스트 사용: " + envHost + " (HMS_SERVER_HOST)");
             }
         } else {
             System.out.println("기본 호스트 사용: " + envHost + " (로컬 접속만)");
@@ -392,7 +392,7 @@ public class Main {
                 System.out.println("HTTP 서버 종료 완료");
 
                 System.out.println("서버가 안전하게 종료되었습니다.");
-                System.out.println("PlanP 백엔드를 사용해 주셔서 감사합니다!");
+                System.out.println("HMS Server를 사용해 주셔서 감사합니다!");
             } catch (Exception e) {
                 System.err.println("서버 종료 중 오류: " + e.getMessage());
             }
@@ -427,7 +427,7 @@ public class Main {
             logger.info("=== 의존성 초기화 시작 ===");
             try {
 
-                logger.info("5. UserService 생성");
+                logger.info("UserService 생성");
                 this.userService = new UserService();
 
                 logger.info("=== 의존성 초기화 완료 ===\n");

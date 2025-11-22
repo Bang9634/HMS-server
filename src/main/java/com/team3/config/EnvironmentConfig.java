@@ -54,7 +54,7 @@ public class EnvironmentConfig {
      * @return 서버 바인딩 호스트 주소 (기본값: "localhost")
      */
     public static String getHost() {
-        return getEnvValue("PLANP_HOST", "localhost");
+        return getEnvValue("HMS_SERVER_HOST", "localhost");
     }
     
     /**
@@ -86,7 +86,7 @@ public class EnvironmentConfig {
      * 
      */
     public static int getPort() {
-        return Integer.parseInt(getEnvValue("PLANP_PORT", "8080"));
+        return Integer.parseInt(getEnvValue("HMS_SERVER_PORT", "8080"));
     }
     
     /**
@@ -121,7 +121,7 @@ public class EnvironmentConfig {
      * @see com.drhong.server.CorsFilter
      */
     public static String[] getAllowedOrigins() {
-        String origins = getEnvValue("PLANP_ALLOWED_ORIGINS", "http://localhost:3000");
+        String origins = getEnvValue("HMS_SERVER_ALLOWED_ORIGINS", "http://localhost:3000");
         return origins.split(",");
     }
     
@@ -182,7 +182,7 @@ public class EnvironmentConfig {
      * @see com.drhong.Main#main(String[])
      */
     public static void printConfig() {
-        System.out.println("=== PlanP 환경 설정 ===");
+        System.out.println("=== HMS-Server 환경 설정 ===");
         System.out.println("호스트: " + getHost());
         System.out.println("포트: " + getPort());
         System.out.println("허용 오리진: " + String.join(", ", getAllowedOrigins()));
