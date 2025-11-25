@@ -53,6 +53,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- 해싱을 위한 jBCrypt 의존성 추가 -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
         <!-- 로깅 라이브러리 의존성 추가 -->
          <dependency>
             <groupId>org.slf4j</groupId>

@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.team3.config.EnvironmentConfig;
+import com.team3.repository.JsonUserRepository;
+import com.team3.repository.UserRepository;
 import com.team3.server.HmsServer;
 import com.team3.service.UserService;
 
@@ -413,6 +415,7 @@ public class Main {
      */
     private static class Dependencies {
         
+        final UserRepository userRepository;
         final UserService userService;
         /**
          * 모든 의존성을 초기화하는 생성자
@@ -426,9 +429,12 @@ public class Main {
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
             try {
+                logger.info("userRepository 생성");
+                this.userRepository = new JsonUserRepository();
 
+                
                 logger.info("UserService 생성");
-                this.userService = new UserService();
+                this.userService = new UserService(userRepository);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
                 

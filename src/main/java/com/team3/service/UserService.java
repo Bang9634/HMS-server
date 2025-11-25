@@ -1,7 +1,16 @@
 package com.team3.service;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.team3.model.AuthToken;
+import com.team3.model.User;
+import com.team3.repository.UserRepository;
+import com.team3.util.PasswordUtil;
 
 
 /**
@@ -21,19 +30,66 @@ public class UserService {
     /** SLF4J 로거 인스턴스 - 비즈니스 로직 처리 과정 로깅 */
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+    private final UserRepository userRepository;
+
+    /** 토큰 유효시간 60분으로 설정 */
+    private static final int TOKEN_VALID_MINUTES = 60;
+
+    // 메모리 기반 토큰 저장소 (간단한 구현)
+    private final Map<String, AuthToken> tokenStore = new ConcurrentHashMap<>();
+
+    // 기본 관리자 계정 설정
+    private static final String DEFAULT_ADMIN_ID = "admin";
+    private static final String DEFAULT_ADMIN_PASSWORD = PasswordUtil.hash("admin");
+    private static final String DEFAULT_ADMIN_NAME = "admin";
+    
     /**
      * UserDAO를 주입받는 생성자
      * <p>
-     * 의존성 주입을 통해 UserDAO 구현체를 받아 초기화한다.
-     * 테스트나 다른 DAO 구현체 사용 시 유용하다.
+     * 의존성 주입을 통해 userRepository 구현체를 받아 초기화한다.
      * </p>
      * 
-     * @param userDAO 사용자 데이터 접근을 위한 DAO 객체
+     * @param userRepository 
      * 
      * @throws NullPointerException userDAO가 null인 경우
      */
-    public UserService() {
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        ensureAdminExists();
+    }
 
+    /**
+     * 관리자 계정이 존재하는지 확인하고 없으면 생성한다
+     */
+    private void ensureAdminExists() {
+        logger.info("관리자 계정 확인 중...");
+        
+        long adminCount = userRepository.countAdmins();
+        
+        if (adminCount == 0) {
+            logger.warn("관리자 계정이 존재하지 않습니다. 기본 관리자 계정을 생성합니다.");
+            
+            User admin = new User(
+                DEFAULT_ADMIN_ID, 
+                DEFAULT_ADMIN_PASSWORD, 
+                DEFAULT_ADMIN_NAME,
+                User.Role.ADMIN
+            );
+            
+            userRepository.save(admin);
+
+            logger.info("기본 관리자 계정이 생성되었습니다");
+            logger.info("ID: {}", DEFAULT_ADMIN_ID);
+            logger.info("비밀번호: {}", DEFAULT_ADMIN_PASSWORD);
+            logger.info("보안을 위해 비밀번호를 변경해주세요!");
+            
+        } else if (adminCount == 1) {
+            Optional<User> admin = userRepository.findAdmin();
+            logger.info("관리자 계정 확인됨: {}", admin.get().getUserId());
+        } else {
+            logger.error("⚠️ 경고: 관리자 계정이 {}개 존재합니다! (정상: 1개)", adminCount);
+            System.err.println("⚠️ 경고: 관리자 계정이 " + adminCount + "개 존재합니다!");
+        }
     }
 
     /**
@@ -44,29 +100,78 @@ public class UserService {
      * 
      * 
      * @param userId 로그인할 사용자 ID
-     * @param password 평문 비밀번호
-     * @return 인증 성공 시 true, 실패 시 false
+     * @param password 클라이언트에서 전송한 평문 비밀번호
+     * @return 인증 성공 시 AuthToken 반환
      * 
      * @apiNote 보안을 위해 사용자 존재 여부와 비밀번호 오류를 구분하지 않음
      */
-    public boolean login(String userId, String password) {
+    public AuthToken login(String userId, String password) {
+        logger.info("로그인 시도: userId={}", userId);
+
         if (userId == null || password == null) {
             logger.warn("로그인 시도 - null 파라미터: userId={}, password={}", userId, password != null);
-            return false;
+            throw new IllegalArgumentException("사용자 아이디 또는 비밀번호가 null입니다.");
         }
 
-        logger.debug("로그인 시도: userId={}", userId);
+        // 사용자 확인
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+        
+        // 비밀번호 확인
+        if (!PasswordUtil.verify(password, user.getPassword())) {
+            logger.warn("로그인 실패 - 잘못된 비밀번호: userId={}", userId);
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+        }
 
-        try {
-  
+         // 토큰 발급
+        AuthToken token = new AuthToken(userId, TOKEN_VALID_MINUTES);
+        tokenStore.put(token.getToken(), token);
+        
+        logger.info("로그인 성공: userId={}, token={}", userId, token.getToken());
+        return token;
+    }
 
-            return true;
-
-        } catch (Exception e) {
-            logger.error("로그인 처리 중 예외 발생: userId={}", userId, e);
-            return false;
+    /**
+     * 로그아웃 - 토큰 무효화
+     */
+    public void logout(String token) {
+        logger.info("로그아웃 요청: token={}", token);
+        
+        AuthToken removed = tokenStore.remove(token);
+        if (removed != null) {
+            logger.info("로그아웃 완료: userId={}", removed.getUserId());
+        } else {
+            logger.warn("유효하지 않은 토큰으로 로그아웃 시도: {}", token);
         }
     }
 
+    /**
+     * 토큰 검증 및 사용자 조회
+     */
+    public Optional<User> validateToken(String token) {
+        logger.debug("토큰 검증: {}", token);
+        
+        AuthToken authToken = tokenStore.get(token);
+        
+        if (authToken == null) {
+            logger.warn("존재하지 않는 토큰: {}", token);
+            return Optional.empty();
+        }
+        
+        if (authToken.isExpired()) {
+            logger.warn("만료된 토큰: {}", token);
+            tokenStore.remove(token);
+            return Optional.empty();
+        }
+        
+        return userRepository.findById(authToken.getUserId());
+    }
+
+    /**
+     * ID 사용 가능 여부 확인
+     */
+    public boolean isUserIdAvailable(String userId) {
+        return !userRepository.existsById(userId);
+    }
 
 }
