@@ -39,7 +39,7 @@ import com.sun.net.httpserver.HttpHandler;
  * {
  *   "status": "UP",
  *   "timestamp": "2025-11-11T15:30:45.123",
- *   "service": "PlanP Backend",
+ *   "service": "HMS-Server",
  *   "version": "1.0.0",
  *   "uptime": "2 hours 15 minutes"
  * }
@@ -86,7 +86,7 @@ public class HealthCheckHandler implements HttpHandler {
      * <ul>
      *   <li><strong>status:</strong> "UP" (서버 정상 작동)</li>
      *   <li><strong>timestamp:</strong> 현재 시간 (ISO 8601 형식)</li>
-     *   <li><strong>service:</strong> 서비스명 ("PlanP Backend")</li>
+     *   <li><strong>service:</strong> 서비스명</li>
      *   <li><strong>version:</strong> 현재 버전</li>
      *   <li><strong>uptime:</strong> 서버 가동 시간 (human-readable)</li>
      * </ul>

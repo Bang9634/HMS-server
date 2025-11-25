@@ -16,12 +16,12 @@ public class User {
         CSR
     }
     
-    private String userId;
-    private String password;
-    private String userName;
-    private Role role;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String userId;              // 사용자 아이디
+    private String password;            // 사용자 비밀번호(평문)
+    private String userName;            // 사용자 이름
+    private Role role;                  // 사용자 역할
+    private LocalDateTime createdAt;    // 사용자 생성 시간
+    private LocalDateTime updatedAt;    // 사용자 업데이트 시간
     
     public User() {
         this.createdAt = LocalDateTime.now();

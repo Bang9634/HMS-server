@@ -32,14 +32,6 @@ import com.team3.service.UserService;
  *   <li>graceful 서버 시작/종료</li>
  * </ul>
  * 
- * <h3>제공하는 API 엔드포인트:</h3>
- * <ul>
- *   <li><code>GET /health</code> - 서버 상태 확인</li>
- *   <li><code>POST /api/users/signup</code> - 사용자 회원가입</li>
- *   <li><code>POST /api/users/login</code> - 사용자 로그인</li>
- *   <li><code>GET /api/users/check-id</code> - 사용자 ID 중복 확인</li>
- *   <li><code>GET /api/users/check-email</code> - 이메일 중복 확인</li>
- * </ul>
  * 
  * <h3>서버 설정:</h3>
  * <ul>
@@ -49,25 +41,13 @@ import com.team3.service.UserService;
  *   <li><strong>인코딩:</strong> UTF-8</li>
  * </ul>
  * 
- * <h3>사용 예시:</h3>
- * <pre>{@code
- * UserService userService = new UserService();
- * PlanPServer server = new PlanPServer("localhost", 8080, userService);
- * 
- * // 서버 시작
- * server.start();
- * 
- * // 애플리케이션 종료 시
- * server.stop();
- * }</pre>
- * 
  * @author bang9634
  * @since 2025-11-10
  * 
  * @see com.sun.net.httpserver.HttpServer
- * @see com.drhong.controller.UserController
- * @see com.drhong.server.CorsFilter
- * @see com.drhong.server.HealthCheckHandler
+ * @see com.team3.controller.UserController
+ * @see com.team3.server.CorsFilter
+ * @see com.team3.server.HealthCheckHandler
  * 
  * @implNote Java 내장 HttpServer 사용
  */
@@ -147,15 +127,6 @@ public class HmsServer {
      * 각 엔드포인트에 CORS 필터를 적용한다.
      * RESTful API 설계 원칙을 따라 경로를 구성한다.
      * </p>
-     * 
-     * <h4>라우팅 구조:</h4>
-     * <ul>
-     *   <li><code>/health</code> - 헬스 체크 (GET)</li>
-     *   <li><code>/api/users/signup</code> - 회원가입 (POST)</li>
-     *   <li><code>/api/users/login</code> - 로그인 (POST)</li>
-     *   <li><code>/api/users/check-id</code> - ID 중복 확인 (GET)</li>
-     *   <li><code>/api/users/check-email</code> - 이메일 중복 확인 (GET)</li>
-     * </ul>
      * 
      * <h4>CORS 정책:</h4>
      * <p>

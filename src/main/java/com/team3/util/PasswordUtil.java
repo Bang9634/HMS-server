@@ -19,14 +19,6 @@ import org.mindrot.jbcrypt.BCrypt;
  *   <li>BCrypt 해시 형식 및 라운드 수 검증</li>
  * </ul>
  * 
- * <h3>보안 특징:</h3>
- * <ul>
- *   <li><strong>솔트 자동 생성:</strong> 레인보우 테이블 공격 방어</li>
- *   <li><strong>적응형 비용:</strong> 하드웨어 발전에 따른 보안 강도 조절</li>
- *   <li><strong>타이밍 공격 방어:</strong> 일정한 처리 시간으로 정보 누출 방지</li>
- *   <li><strong>입력 검증:</strong> null, 빈 문자열 등 예외 상황 처리</li>
- * </ul>
- * 
  * <h3>사용 예시:</h3>
  * <pre>{@code
  * // 회원가입 시 비밀번호 해싱

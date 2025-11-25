@@ -19,11 +19,10 @@ import com.team3.util.PasswordUtil;
  * 이 클래스는 사용자 관리의 핵심 비즈니스 로직을 담당한다.
  * </p>
  * 
- * TODO: 전체적으로 손봐야함. 로그인 로직 미완성
- * 
  * @author bang9634
  * @since 2025-11-10
-
+ * 
+ * @see 
  */
 public class UserService {
 
@@ -44,22 +43,22 @@ public class UserService {
     private static final String DEFAULT_ADMIN_NAME = "admin";
     
     /**
-     * UserDAO를 주입받는 생성자
+     * userRepository를 주입받는 생성자
      * <p>
      * 의존성 주입을 통해 userRepository 구현체를 받아 초기화한다.
      * </p>
      * 
-     * @param userRepository 
+     * @param userRepository 의존성 주입할 userRepository 객체
      * 
-     * @throws NullPointerException userDAO가 null인 경우
+     * @throws NullPointerException userRepository가 null인 경우
      */
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository) throws NullPointerException{
         this.userRepository = userRepository;
         ensureAdminExists();
     }
 
     /**
-     * 관리자 계정이 존재하는지 확인하고 없으면 생성한다
+     * 관리자 계정이 존재하는지 확인하고 없으면 생성한다.
      */
     private void ensureAdminExists() {
         logger.info("관리자 계정 확인 중...");
@@ -87,8 +86,8 @@ public class UserService {
             Optional<User> admin = userRepository.findAdmin();
             logger.info("관리자 계정 확인됨: {}", admin.get().getUserId());
         } else {
-            logger.error("⚠️ 경고: 관리자 계정이 {}개 존재합니다! (정상: 1개)", adminCount);
-            System.err.println("⚠️ 경고: 관리자 계정이 " + adminCount + "개 존재합니다!");
+            logger.error("경고: 관리자 계정이 {}개 존재합니다! (정상: 1개)", adminCount);
+            System.err.println("경고: 관리자 계정이 " + adminCount + "개 존재합니다!");
         }
     }
 
@@ -132,7 +131,9 @@ public class UserService {
     }
 
     /**
-     * 로그아웃 - 토큰 무효화
+     * 토큰을 무효화하여 로그아웃을 한다.
+     * 
+     * @param token 무효화할 토큰
      */
     public void logout(String token) {
         logger.info("로그아웃 요청: token={}", token);
@@ -146,7 +147,10 @@ public class UserService {
     }
 
     /**
-     * 토큰 검증 및 사용자 조회
+     * 토큰 검증 및 사용자 조회를 한다.
+     * 
+     * @param token 검증할 토큰
+     * @return 토큰에 해당하는 사용자 객체
      */
     public Optional<User> validateToken(String token) {
         logger.debug("토큰 검증: {}", token);
@@ -168,7 +172,10 @@ public class UserService {
     }
 
     /**
-     * ID 사용 가능 여부 확인
+     * ID 사용 가능 여부 확인한다.
+     * 
+     * @param userId 사용 가능 여부를 확인할 아이디
+     * @return 사용 가능 여부를 true, false로 반환한다.
      */
     public boolean isUserIdAvailable(String userId) {
         return !userRepository.existsById(userId);

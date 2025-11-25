@@ -7,7 +7,8 @@ package com.team3.dto.request;
  * 순수하게 데이터만 담으며, 비즈니스 로직은 포함하지 않는다.
  * </p>
  * 
- * @apiNote 비밀번호는 반드시 BCrypt로 해싱된 값이어야 한다.
+ * @author bang9634
+ * @since 2025-11-22
  */
 public class LoginRequest {
     private final String userId;

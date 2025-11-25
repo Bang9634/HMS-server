@@ -47,7 +47,7 @@ public class JsonFileManager<T> {
         this.filePath = filePath;
         this.typeToken = typeToken;
         
-        // ✅ LocalDateTime 어댑터 등록
+        // LocalDateTime 어댑터 등록
         this.gson = new GsonBuilder()
             .setPrettyPrinting()  // 가독성 좋은 JSON 포맷
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())  // ← 추가!
@@ -87,7 +87,7 @@ public class JsonFileManager<T> {
     /**
      * JSON 파일에서 모든 데이터를 읽어온다
      * 
-     * @return 데이터 리스트
+     * @return 데이터가 담긴 ArrayList
      */
     public synchronized List<T> readAll() {
         logger.debug("JSON 파일 읽기: {}", filePath);
@@ -129,6 +129,8 @@ public class JsonFileManager<T> {
     
     /**
      * 실제 파일에 쓰기 (내부 메서드)
+     * 
+     * @param data 실제 파일에 쓸 데이터 리스트
      */
     private void writeToFile(List<T> data) throws IOException {
         String json = gson.toJson(data);
@@ -139,7 +141,8 @@ public class JsonFileManager<T> {
     }
     
     /**
-     * 파일 경로 반환
+     * 파일 경로를 반환한다.
+     * @return 파일 경로
      */
     public String getFilePath() {
         return filePath;

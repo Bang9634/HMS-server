@@ -43,8 +43,8 @@ import com.sun.net.httpserver.HttpHandler;
  * @since 2025-11-10
  * 
  * @see com.sun.net.httpserver.HttpHandler
- * @see com.drhong.server.CorsFilter
- * @see com.drhong.server.PlanPServer
+ * @see com.team3.server.CorsFilter
+ * @see com.team3.server.PlanPServer
  * 
  * @implNote 이 핸들러는 fallback 역할을 하므로 다른 구체적인 핸들러들보다 나중에 등록되어야 함
  */
@@ -69,12 +69,6 @@ public class CorsHandler implements HttpHandler {
      *   <li>기타 경로 처리 (404 Not Found)</li>
      * </ol>
      * 
-     * <h4>응답 예시:</h4>
-     * <pre>{@code
-     * GET / → 200 OK: "PlanP Backend Server is running!"
-     * OPTIONS /api/test → 200 OK: (빈 응답, CORS 헤더만)
-     * GET /unknown → 404 Not Found: "404 - Path not found: /unknown"
-     * }</pre>
      * 
      * @param exchange HTTP 요청/응답 교환 객체
      * @throws IOException HTTP 처리 중 I/O 오류가 발생한 경우
@@ -228,7 +222,7 @@ public class CorsHandler implements HttpHandler {
      * @param exchange HTTP 요청/응답 교환 객체
      * @param origin 요청의 Origin 헤더 값 (null 가능)
      * 
-     * @see com.drhong.server.CorsFilter#setCorsHeaders(HttpExchange, String)
+     * @see com.team3.server.CorsFilter#setCorsHeaders(HttpExchange, String)
      */
     private void setCorsHeaders(HttpExchange exchange, String origin) {
         // Origin 검증 및 Access-Control-Allow-Origin 설정

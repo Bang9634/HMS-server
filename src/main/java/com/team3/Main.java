@@ -1,15 +1,19 @@
 package com.team3;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
+import com.team3.model.User;
 import com.team3.repository.JsonUserRepository;
 import com.team3.repository.UserRepository;
 import com.team3.server.HmsServer;
 import com.team3.service.UserService;
+import com.team3.util.JsonFileManager;
 
 
 /**
@@ -414,7 +418,10 @@ public class Main {
      * @since 2025-11-19
      */
     private static class Dependencies {
+        /** 데이터를 저장할 파일의 경로. 프로젝트 루트 디렉토리 기준으로 작성 */
+        private static final String DATA_FILE = "data/users.json";
         
+        final JsonFileManager<User> jsonFileManager;
         final UserRepository userRepository;
         final UserService userService;
         /**
@@ -429,8 +436,15 @@ public class Main {
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
             try {
+                logger.info("JsonFileManager 생성");
+                this.jsonFileManager = new JsonFileManager<>(
+                    DATA_FILE, 
+                    new TypeToken<List<User>>() {}
+                );
+
+
                 logger.info("userRepository 생성");
-                this.userRepository = new JsonUserRepository();
+                this.userRepository = new JsonUserRepository(jsonFileManager);
 
                 
                 logger.info("UserService 생성");
@@ -438,8 +452,11 @@ public class Main {
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
                 
+            } catch (NullPointerException e) {
+                logger.error("의존성 초기화 실패: {}", e.getMessage());
+                throw new RuntimeException("Failed to initialize dependencies", e);
             } catch (Exception e) {
-                logger.error("의존성 초기화 실패", e);
+                logger.error("의존성 초기화 실패: {}", e.getMessage());
                 throw new RuntimeException("Failed to initialize dependencies", e);
             }
         }

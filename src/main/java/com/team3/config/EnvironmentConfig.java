@@ -1,7 +1,7 @@
 package com.team3.config;
 
 /**
- * PlanP 백엔드 애플리케이션 환경설정 통합 관리 클래스
+ * 서버 애플리케이션 환경설정 통합 관리 클래스
  * <p>
  * 서버 실행 환경 및 기본 설정을 관리하고, 환경변수를 읽는 공통 메서드를 제공한다.
  * </p>
@@ -28,8 +28,8 @@ package com.team3.config;
  * @author bang9634
  * @since 2025-11-15
  * 
- * @see com.drhong.Main
- * @see com.drhong.server.CorsFilter
+ * @see com.team3.Main
+ * @see com.team3.server.CorsFilter
  * 
  * @implNote 모든 메서드는 static으로 구현되어 인스턴스 생성없이 사용 가능
  */
@@ -106,7 +106,7 @@ public class EnvironmentConfig {
      * <h4>설정 예시:</h4>
      * <pre>{@code
      * // 환경변수 설정
-     * export PLANP_ALLOWED_ORIGINS="http://localhost:3000,https://myapp.com,https://www.myapp.com"
+     * export HMS_SEVER_ALLOWED_ORIGINS="http://localhost:3000,https://myapp.com,https://www.myapp.com"
      * 
      * // 코드에서 사용
      * String[] origins = EnvironmentConfig.getAllowedOrigins();
@@ -170,7 +170,7 @@ public class EnvironmentConfig {
      * 
      * <h4>출력 예시:</h4>
      * <pre>
-     * === PlanP 환경 설정 ===
+     * === HMS Server 환경 설정 ===
      * 호스트: localhost
      * 포트: 8080
      * 허용 오리진: http://localhost:3000
@@ -182,7 +182,7 @@ public class EnvironmentConfig {
      * @see com.drhong.Main#main(String[])
      */
     public static void printConfig() {
-        System.out.println("=== HMS-Server 환경 설정 ===");
+        System.out.println("=== HMS Server 환경 설정 ===");
         System.out.println("호스트: " + getHost());
         System.out.println("포트: " + getPort());
         System.out.println("허용 오리진: " + String.join(", ", getAllowedOrigins()));

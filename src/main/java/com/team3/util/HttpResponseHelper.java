@@ -21,14 +21,17 @@ import com.sun.net.httpserver.HttpExchange;
  * 
  * @author bang9634
  * @since 2025-11-23
+ * 
+ * @apiNote 해당 클래스는 모두 정적 메서드로 이루어져 인스턴스를 생성할 필요가 없음.
  */
 public class HttpResponseHelper {
-    
     private static final Logger logger = LoggerFactory.getLogger(HttpResponseHelper.class);
     private static final Gson gson = new Gson();
     
     /**
      * private 생성자 - 유틸리티 클래스는 인스턴스화 불가
+     * 
+     * @throws AssertionError 생성자 호출해서 인스턴스화할 경우
      */
     private HttpResponseHelper() {
         throw new AssertionError("유틸리티 클래스는 인스턴스화할 수 없습니다");

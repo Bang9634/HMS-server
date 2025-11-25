@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.reflect.TypeToken;
 import com.team3.model.User;
 import com.team3.util.JsonFileManager;
 
@@ -21,20 +20,30 @@ import com.team3.util.JsonFileManager;
  * @since 2025-11-23
  */
 public class JsonUserRepository implements UserRepository {
-    
-    private static final Logger logger = LoggerFactory.getLogger(JsonUserRepository.class);
-    private static final String DATA_FILE = "data/users.json";
-    
+    private static final Logger logger = LoggerFactory.getLogger(JsonUserRepository.class);  
     private final JsonFileManager<User> fileManager;
     
-    public JsonUserRepository() {
-        this.fileManager = new JsonFileManager<>(
-            DATA_FILE, 
-            new TypeToken<List<User>>() {}
-        );
-        logger.info("JsonUserRepository 초기화: {}", DATA_FILE);
+    /**
+     * JsonUserRepository 생성자
+     * 
+     * @param jsonFileManager 의존성 주입용 jsonFileManager 객체
+     */
+    public JsonUserRepository(JsonFileManager<User> jsonFileManager) {
+        logger.info("JsonUserRepository 초기화 시작...");
+        this.fileManager = jsonFileManager;
+        logger.info("JsonUserRepository 초기화 완료");
     }
     
+    /**
+     * 사용자 객체를 Json 파일에 저장한다.
+     * <p>
+     * 매개변수로 전달한 사용자 객체와 동일한 아이디를 가진 사용자가
+     * 파일에 존재하면, 매개변수로 전달한 사용자 객체로 업데이트한다.
+     * 만약 존재하지않으면, 새로운 사용자로 추가한다.
+     * </p>
+     * 
+     * @param user 저장할 사용자 객체
+     */
     @Override
     public void save(User user) {
         logger.info("사용자 저장: {}", user.getUserId());
@@ -60,6 +69,16 @@ public class JsonUserRepository implements UserRepository {
         fileManager.writeAll(users);
     }
     
+    /**
+     * 사용자가 존재하는 지 아이디로 조회한다.
+     * <p>
+     * 사용자 조회에 성공하면, 해당 사용자 객체를 반환하며,
+     * 그렇지 않으면 null을 반환한다.
+     * </p>
+     * 
+     * @param userId 조회를 시도할 사용자 아이디
+     * @return 조회한 사용자 객체
+     */
     @Override
     public Optional<User> findById(String userId) {
         logger.debug("사용자 조회: userId={}", userId);
@@ -69,12 +88,23 @@ public class JsonUserRepository implements UserRepository {
             .findFirst();
     }
     
+    /**
+     * 전체 사용자를 조회한다.
+     * 
+     * @return 전체 사용자 객체를 담은 List<User>
+     */
     @Override
     public List<User> findAll() {
         logger.debug("전체 사용자 조회");
         return fileManager.readAll();
     }
     
+    /**
+     * 사용자 아이디를 조회해 삭제하고, 결과를 반환한다.
+     * 
+     * @param userId 삭제할 사용자 아이디
+     * @return 사용자 삭제 성공 여부
+     */
     @Override
     public boolean deleteById(String userId) {
         logger.info("사용자 삭제: {}", userId);
@@ -96,11 +126,27 @@ public class JsonUserRepository implements UserRepository {
         return false;
     }
     
+    /**
+     * 사용자 존재 여부를 반환한다.
+     * 
+     * @param userId 존재 여부를 확인할 사용자 아이디
+     * @return 존재하면 true, 그렇지 않으면 false
+     */
     @Override
     public boolean existsById(String userId) {
         return findById(userId).isPresent();
     }
 
+    /**
+     * 관리자 역할 사용자를 조회하고 반환한다.
+     * <p>
+     * 만약 관리자 역할의 사용자가 여러 명이 존재하면,
+     * 파일에서 가장 처음으로 탐색된 관리자 역할 사용자를 반환한다.
+     * 존재하지 않으면 null을 반환한다.
+     * </p>
+     * 
+     * @return 파일에 존재하는 관리자 역할 사용자
+     */
     @Override
     public Optional<User> findAdmin() {
         logger.debug("관리자 사용자 조회");
@@ -110,6 +156,11 @@ public class JsonUserRepository implements UserRepository {
             .findFirst();
     }
 
+    /**
+     * 관리자 역할 사용자의 수를 반환한다.
+     * 
+     * @return 관리자 역할 사용자의 수
+     */
     @Override
     public long countAdmins() {
         long count = fileManager.readAll().stream()
