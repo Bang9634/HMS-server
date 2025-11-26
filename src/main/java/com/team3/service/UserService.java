@@ -1,8 +1,6 @@
 package com.team3.service;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +28,7 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
-
-    /** 토큰 유효시간 60분으로 설정 */
-    private static final int TOKEN_VALID_MINUTES = 60;
-
-    // 메모리 기반 토큰 저장소 (간단한 구현)
-    private final Map<String, AuthToken> tokenStore = new ConcurrentHashMap<>();
+    private final TokenService tokenService;
 
     // 기본 관리자 계정 설정
     private static final String DEFAULT_ADMIN_ID = "admin";
@@ -52,11 +45,12 @@ public class UserService {
      * 
      * @throws IllegalArgumentException userRepository가 null인 경우
      */
-    public UserService(UserRepository userRepository) {
-        if (userRepository == null) {
-            throw new IllegalArgumentException("UserRepository는 null일 수 없습니다.");
+    public UserService(UserRepository userRepository, TokenService tokenService) {
+        if (userRepository == null || tokenService == null) {
+            throw new IllegalArgumentException("의존성은 null일 수 없습니다.");
         }
         this.userRepository = userRepository;
+        this.tokenService = tokenService;
         ensureAdminExists();
     }
 
@@ -125,9 +119,8 @@ public class UserService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
         }
 
-         // 토큰 발급
-        AuthToken token = new AuthToken(userId, TOKEN_VALID_MINUTES);
-        tokenStore.put(token.getToken(), token);
+        // 토큰 발급
+        AuthToken token = tokenService.generateToken(userId);
         
         logger.info("로그인 성공: userId={}, token={}", userId, token.getToken());
         return token;
@@ -144,42 +137,12 @@ public class UserService {
             logger.warn("null 토큰으로 로그 아웃 시도");
             return;
         }
-        AuthToken removed = tokenStore.remove(token);
+        AuthToken removed = tokenService.removeToken(token);
         if (removed != null) {
             logger.info("로그아웃 완료: userId={}", removed.getUserId());
         } else {
             logger.warn("유효하지 않은 토큰으로 로그아웃 시도: {}", token);
         }
-    }
-
-    /**
-     * 토큰 검증 및 사용자 조회를 한다.
-     * 
-     * @param token 검증할 토큰
-     * @return 토큰에 해당하는 사용자 객체
-     */
-    public Optional<User> validateToken(String token) {
-        logger.debug("토큰 검증: {}", token);
-
-        if (token == null) {
-            logger.warn("유효하지 않는 토큰: {}", token);
-            return Optional.empty();
-        }
-        
-        AuthToken authToken = tokenStore.get(token);
-        
-        if (authToken == null) {
-            logger.warn("존재하지 않는 토큰: {}", token);
-            return Optional.empty();
-        }
-        
-        if (authToken.isExpired()) {
-            logger.warn("만료된 토큰: {}", token);
-            tokenStore.remove(token);
-            return Optional.empty();
-        }
-        
-        return userRepository.findById(authToken.getUserId());
     }
 
     /**
@@ -191,5 +154,4 @@ public class UserService {
     public boolean isUserIdAvailable(String userId) {
         return !userRepository.existsById(userId);
     }
-
 }

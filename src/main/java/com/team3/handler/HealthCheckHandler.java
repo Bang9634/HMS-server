@@ -5,12 +5,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.team3.model.User;
+import com.team3.model.User.Role;
+import com.team3.service.TokenService;
+import com.team3.util.HttpRequestHelper;
 import com.team3.util.HttpResponseHelper;
 
 /**
@@ -54,6 +59,8 @@ public class HealthCheckHandler implements HttpHandler {
 
     /** SLF4J 로거 인스턴스 - 헬스 체크 요청을 로깅 */
     private static final Logger logger = LoggerFactory.getLogger(HealthCheckHandler.class);
+
+    private final TokenService tokenService;
     
     /** 서버 시작 시간 (업타임 계산용) */
     private static final long SERVER_START_TIME = System.currentTimeMillis();
@@ -62,6 +69,13 @@ public class HealthCheckHandler implements HttpHandler {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = 
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
+
+    public HealthCheckHandler(TokenService tokenService) {
+        if (tokenService == null) {
+            throw new IllegalArgumentException("의존성은 null일 수 없습니다.");
+        }
+        this.tokenService = tokenService;
+    }
     /**
      * 헬스 체크 요청을 처리하는 메인 메서드
      * <p>
@@ -104,7 +118,19 @@ public class HealthCheckHandler implements HttpHandler {
             HttpResponseHelper.sendErrorResponse(exchange, 405, "Method Not Allowed - GET 요청만 지원됩니다");
             return;
         }
-        
+        String token = HttpRequestHelper.extractBearerToken(exchange);
+        Optional<User> user = tokenService.validateToken(token);
+        logger.debug("클라이언트에서 전송한 토큰 검증: token = {}", token);
+        if (user.isEmpty()) {
+            logger.debug("유효하지 않은 토큰: userId = {}", user.get().getUserId());
+            HttpResponseHelper.sendErrorResponse(exchange, 401, "인증 토큰이 유효하지 않습니다.");
+            return;
+        } else if (user.get().getRole() != Role.ADMIN) {
+            logger.debug("접근 권한 부족: role = {}", user.get().getRole());
+            HttpResponseHelper.sendErrorResponse(exchange, 401, "접근 권한이 없습니다.");
+            return;
+        }
+        logger.debug("토큰 검증 성공");
         try {
             // 헬스 상태 정보 수집
             Map<String, Object> healthStatus = createHealthStatusInfo();

@@ -3,6 +3,7 @@ package com.team3.handler;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.team3.dto.request.LoginRequest;
 import com.team3.model.AuthToken;
+import com.team3.model.User;
+import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.HttpRequestHelper;
 import com.team3.util.HttpResponseHelper;
@@ -37,6 +40,7 @@ public class UserHandler implements HttpHandler {
     
     /** 사용자 비즈니스 로직 처리 서비스 */
     private final UserService userService;
+    private final TokenService tokenService;
 
     /** JSON을 다루기 위한 Gson 인스턴스 */
     private final Gson gson = new Gson();
@@ -46,11 +50,12 @@ public class UserHandler implements HttpHandler {
      * 
      * @param userService 사용자 관련 비즈니스 로직을 처리하는 서비스 객체
      */
-    public UserHandler(UserService userService) {
-        if (userService == null) {
-            throw new IllegalArgumentException("UserService는 null일 수 없습니다.");
+    public UserHandler(UserService userService, TokenService tokenService) {
+        if (userService == null || tokenService == null) {
+            throw new IllegalArgumentException("의존성은 null일 수 없습니다.");
         }
         this.userService = userService;
+        this.tokenService = tokenService;
     }
     
 
@@ -129,15 +134,21 @@ public class UserHandler implements HttpHandler {
             
             // UserService를 통한 로그인 검증
             AuthToken token = userService.login(userId, password);
-            
+            Optional<User> user = tokenService.validateToken(token.getToken());
+            if (user == null) {
+                throw new NullPointerException("인증 토큰으로 서버 접속 실패}");
+            }
+
             // response 객체 생성
-            // 테스트용으로 대충 복붙
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "로그인 성공");
             response.put("token", token.getToken());
             response.put("expiresAt", token.getExpiresAt().toString());
-            logger.info("로그인 성공: userId={}, clientIP={}, token={}", userId, clientIP, token);
+            response.put("userId", user.get().getUserId());
+            response.put("userName", user.get().getUserName());
+            response.put("role", user.get().getRole());
+            logger.info("로그인 성공: userId={}, clientIP={}, token={}", userId, clientIP, token.getToken());
             
             // response를 클라이언트에게 전송
             HttpResponseHelper.sendJsonResponse(exchange, 200, response);

@@ -15,6 +15,7 @@ import com.team3.model.User;
 import com.team3.repository.JsonUserRepository;
 import com.team3.repository.UserRepository;
 import com.team3.server.HmsServer;
+import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.JsonFileManager;
 
@@ -155,7 +156,7 @@ public class Main {
                 .port(port)
                 .allowedOrigins(Arrays.asList(EnvironmentConfig.getAllowedOrigins()))
                 .addHandler("/health", dependencies.healthCheckHandler)
-                .addHandler("/api/users/login", dependencies.userHandler::handleLogin)
+                .addHandler("/api/users/login", dependencies.userHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -433,7 +434,10 @@ public class Main {
         
         final JsonFileManager<User> jsonFileManager;
         final UserRepository userRepository;
+
+        final TokenService tokenService;
         final UserService userService;
+
         final HealthCheckHandler healthCheckHandler;
         final UserHandler userHandler;
 
@@ -458,15 +462,18 @@ public class Main {
 
                 logger.info("userRepository 생성");
                 this.userRepository = new JsonUserRepository(jsonFileManager);
-                
+
+                logger.info("TokenService 생성");
+                this.tokenService = new TokenService(userRepository);
+
                 logger.info("UserService 생성");
-                this.userService = new UserService(userRepository);
+                this.userService = new UserService(userRepository, tokenService);
 
                 logger.info("HealthCheckHandler 생성");
-                this.healthCheckHandler = new HealthCheckHandler();
+                this.healthCheckHandler = new HealthCheckHandler(tokenService);
 
                 logger.info("UserHandler 생성");
-                this.userHandler = new UserHandler(userService);
+                this.userHandler = new UserHandler(userService, tokenService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
                 
