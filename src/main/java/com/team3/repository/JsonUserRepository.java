@@ -36,38 +36,54 @@ public class JsonUserRepository implements UserRepository {
     
     /**
      * 사용자 객체를 Json 파일에 저장한다.
-     * <p>
-     * 매개변수로 전달한 사용자 객체와 동일한 아이디를 가진 사용자가
-     * 파일에 존재하면, 매개변수로 전달한 사용자 객체로 업데이트한다.
-     * 만약 존재하지않으면, 새로운 사용자로 추가한다.
-     * </p>
      * 
      * @param user 저장할 사용자 객체
      */
     @Override
-    public void save(User user) {
+    public boolean save(User user) {
         logger.info("사용자 저장: {}", user.getUserId());
         
         List<User> users = fileManager.readAll();
         
         // 기존 사용자 업데이트 또는 새 사용자 추가
-        boolean updated = false;
+
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUserId().equals(user.getUserId())) {
+                logger.debug("기존 사용자 존재: {}", user.getUserId());
+                return false;
+            }
+        }
+
+        users.add(user);
+        logger.debug("새 사용자 추가: {}", user.getUserId());
+        countUsers();
+        
+        fileManager.writeAll(users);
+        return true;
+    }
+
+    /**
+     * 사용자 객체를 Json 파일에 업데이트한다.
+     * 
+     * @param user 업데이트할 사용자 객체
+     */
+    @Override
+    public boolean update(User user) {
+        logger.info("사용자 업데이트: {}", user.getUserId());
+        
+        List<User> users = fileManager.readAll();
+        
+        // 기존 사용자 업데이트
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getUserId().equals(user.getUserId())) {
                 users.set(i, user);
-                updated = true;
                 logger.debug("기존 사용자 업데이트: {}", user.getUserId());
-                break;
+                fileManager.writeAll(users);
+                return true;
             }
         }
-        
-        if (!updated) {
-            users.add(user);
-            logger.debug("새 사용자 추가: {}", user.getUserId());
-            countUsers();
-        }
-        
-        fileManager.writeAll(users);
+        logger.debug("기존 사용자 존재하지 않음: {}", user.getUserId());
+        return false;
     }
     
     /**

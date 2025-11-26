@@ -24,7 +24,14 @@ public interface UserRepository {
      * 
      * @param user 저장할 사용자 객체
      */
-    void save(User user);
+    boolean save(User user);
+
+    /**
+     * 사용자 업데이트
+     * 
+     * @param user 업데이트할 사용자 객체
+     */
+    boolean update(User user);
     
     /**
      * ID로 사용자 찾기

@@ -80,6 +80,8 @@ public class UserHandler implements HttpHandler {
                 handleLogin(exchange);
             } else if (path.endsWith("/get-users") && "GET".equals(method)) {
                 handleGetUsers(exchange);
+            } else if (path.endsWith("/add-user") && "POST".equals(method)) {
+                handleAddUser(exchange);
             } else {
                 logger.warn("잘못된 요청: {} {}", method, path);
                 HttpResponseHelper.sendErrorResponse(exchange, 404, "Not Found");
@@ -212,6 +214,58 @@ public class UserHandler implements HttpHandler {
             HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
         } catch (IOException | RuntimeException e) {
             logger.error("사용자 목록 조회 처리 오류: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
+        }
+    }
+
+    public void handleAddUser(HttpExchange exchange) throws IOException {
+        try {
+            logger.info("사용자 추가 시도");
+            
+            // 인증 토큰 유효성 검증
+            logger.debug("인증 토큰 유효성 검증 시도...");
+            String token = HttpRequestHelper.extractBearerToken(exchange);
+            Optional<User> user = tokenService.validateToken(token);
+            if (user.isEmpty()) {
+                logger.debug("인증 토큰 유효하지 않음");
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "인증 토큰이 유효하지 않습니다.");
+                return;
+            }
+            if (user.get().getRole() != Role.ADMIN) {   
+                logger.debug("접근 권한 부족: role = {}", user.get().getRole());
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "접근 권한이 없습니다.");
+                return;
+            }
+            // request의 body에서 로그인 정보 추출
+            String requestBody = HttpRequestHelper.readRequestBody(exchange);
+            logger.debug("사용자 추가 요청 본문 수신: length={}", requestBody.length());
+
+            // User 모델로 변환
+            User userAdded = gson.fromJson(requestBody, User.class);
+            if (!userService.addUser(userAdded)) {
+                logger.warn("사용자 추가 실패: 중복된 아이디 존재");
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "이미 존재하는 아이디입니다.");
+                return;
+            }
+
+            // response 객체 생성
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "추가 성공");
+            response.put("users", userService.getUsers());
+            logger.info("사용자 추가 성공: userId={}, token={}", userAdded.getUserId(), token);
+            
+            // response를 클라이언트에게 전송
+            HttpResponseHelper.sendJsonResponse(exchange, 200, response);
+            
+        } catch (IllegalArgumentException e) {
+            logger.warn("사용자 추가 실패: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 401, e.getMessage());
+        } catch (JsonSyntaxException e) {
+            logger.error("JSON 파싱 오류: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            logger.error("사용자 추가 처리 오류: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
         }
     }

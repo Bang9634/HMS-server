@@ -158,6 +158,7 @@ public class Main {
                 .addHandler("/health", dependencies.healthCheckHandler)
                 .addHandler("/api/users/login", dependencies.userHandler)
                 .addHandler("/api/users/get-users", dependencies.userHandler)
+                .addHandler("/api/users/add-user", dependencies.userHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");

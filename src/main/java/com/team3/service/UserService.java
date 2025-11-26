@@ -31,7 +31,7 @@ public class UserService {
 
     // 기본 관리자 계정 설정
     private static final String DEFAULT_ADMIN_ID = "admin";
-    private static final String DEFAULT_ADMIN_PASSWORD = PasswordUtil.hash("admin");
+    private static final String DEFAULT_ADMIN_PASSWORD = "admin";
     private static final String DEFAULT_ADMIN_NAME = "admin";
     
     /**
@@ -71,7 +71,7 @@ public class UserService {
                 User.Role.ADMIN
             );
             
-            userRepository.save(admin);
+            addUser(admin);
 
             logger.info("기본 관리자 계정이 생성되었습니다");
             logger.info("ID: {}", DEFAULT_ADMIN_ID);
@@ -161,5 +161,16 @@ public class UserService {
      */
     public List<User> getUsers() {
         return userRepository.findAll();
+    }
+
+    /**
+     * 사용자를 추가한다.
+     * 
+     * @param user 추가할 사용자 객체
+     * @return 성공 여부
+     */
+    public boolean addUser(User user) {
+        user.setPassword(PasswordUtil.hash(user.getPassword()));
+        return userRepository.save(user);
     }
 }
