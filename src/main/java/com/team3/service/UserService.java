@@ -1,5 +1,6 @@
 package com.team3.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -151,5 +152,14 @@ public class UserService {
      */
     public boolean isUserIdAvailable(String userId) {
         return !userRepository.existsById(userId);
+    }
+
+    /**
+     * 모든 사용자 정보를 반환한다.
+     * 
+     * @return 모든 사용자 정보
+     */
+    public List<User> getUsers() {
+        return userRepository.findAll();
     }
 }

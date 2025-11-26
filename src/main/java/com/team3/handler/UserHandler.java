@@ -15,6 +15,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.team3.dto.request.LoginRequest;
 import com.team3.model.AuthToken;
 import com.team3.model.User;
+import com.team3.model.User.Role;
 import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.HttpRequestHelper;
@@ -71,6 +72,8 @@ public class UserHandler implements HttpHandler {
             // 라우팅
             if (path.endsWith("/login") && "POST".equals(method)) {
                 handleLogin(exchange);
+            } if (path.endsWith("/get-users") && "GET".equals(method)) {
+                handleGetUsers(exchange);
             } else {
                 logger.warn("잘못된 요청: {} {}", method, path);
                 HttpResponseHelper.sendErrorResponse(exchange, 404, "Not Found");
@@ -96,15 +99,6 @@ public class UserHandler implements HttpHandler {
      * @apiNote LoginRequest DTO를 사용하여 타입 안정성을 보장함
      */
     public void handleLogin(HttpExchange exchange) throws IOException {
-        String clientIP = exchange.getRemoteAddress().getAddress().getHostAddress();
-
-        // HTTP POST 메서드 방식만 허용
-        if (!"POST".equals(exchange.getRequestMethod())) {
-            logger.warn("잘못된 HTTP 메서드: method={}, clientIP={}", exchange.getRequestMethod(), clientIP);
-            HttpResponseHelper.sendErrorResponse(exchange, 405, "Method Not Allowed");
-            return;
-        }
-        
         try {
             // request의 body에서 로그인 정보 추출
             String requestBody = HttpRequestHelper.readRequestBody(exchange);
@@ -114,7 +108,7 @@ public class UserHandler implements HttpHandler {
             LoginRequest loginRequest = gson.fromJson(requestBody, LoginRequest.class);
             
             if (loginRequest == null) {
-                logger.warn("잘못된 JSON: clientIP={}", clientIP);
+                logger.warn("잘못된 JSON");
                 HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format");
                 return;
             }
@@ -125,12 +119,12 @@ public class UserHandler implements HttpHandler {
             // 필수 필드 검증
             if (userId == null || userId.trim().isEmpty() || 
                 password == null || password.trim().isEmpty()) {
-                logger.warn("필수 필드 누락: userId={}, clientIP={}", userId, clientIP);
+                logger.warn("필수 필드 누락: userId={}", userId);
                 HttpResponseHelper.sendErrorResponse(exchange, 400, "userId와 password는 필수 입력 항목입니다.");
                 return;
             }
 
-            logger.info("로그인 인증 시도: userId={}, clientIP={}", userId, clientIP);
+            logger.info("로그인 인증 시도: userId={}", userId);
             
             // UserService를 통한 로그인 검증
             AuthToken token = userService.login(userId, password);
@@ -148,7 +142,7 @@ public class UserHandler implements HttpHandler {
             response.put("userId", user.get().getUserId());
             response.put("userName", user.get().getUserName());
             response.put("role", user.get().getRole());
-            logger.info("로그인 성공: userId={}, clientIP={}, token={}", userId, clientIP, token.getToken());
+            logger.info("로그인 성공: userId={}, token={}", userId, token.getToken());
             
             // response를 클라이언트에게 전송
             HttpResponseHelper.sendJsonResponse(exchange, 200, response);
@@ -157,12 +151,62 @@ public class UserHandler implements HttpHandler {
             logger.warn("로그인 실패: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 401, e.getMessage());
         } catch (JsonSyntaxException e) {
-            logger.error("JSON 파싱 오류: clientIP={}", clientIP, e);
+            logger.error("JSON 파싱 오류: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
         } catch (IOException | RuntimeException e) {
-            logger.error("로그인 처리 오류: clientIP={}", clientIP, e);
+            logger.error("로그인 처리 오류: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
         }
     }
     
+    /**
+     * 사용자 조회를 처리하는 메서드
+     * <p>
+     * 클라이언트에서 전송한 인증 토큰의 유효성과 사용자의 권한을 검사한 후,
+     * 사용자 정보 목록을 전송한다.
+     * </p>
+     * 
+     * @param exchange HTTP 요청/응답 처리를 위한 교환 객체
+     * @throws IOException 네트워크 I/O 처리 중 오류가 발생한 경우
+     */
+    public void handleGetUsers(HttpExchange exchange) throws IOException {
+        try {
+            logger.info("사용자 목록 조회 시도");
+            
+            // 인증 토큰 유효성 검증
+            logger.debug("인증 토큰 유효성 검증 시도...");
+            String token = HttpRequestHelper.extractBearerToken(exchange);
+            Optional<User> user = tokenService.validateToken(token);
+            if (user.isEmpty()) {
+                logger.debug("인증 토큰 유효하지 않음");
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "인증 토큰이 유효하지 않습니다.");
+                return;
+            }
+            if (user.get().getRole() != Role.ADMIN) {   
+                logger.debug("접근 권한 부족: role = {}", user.get().getRole());
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "접근 권한이 없습니다.");
+                return;
+            }
+
+            // response 객체 생성
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "조회 성공");
+            response.put("users", userService.getUsers());
+            logger.info("모든 사용자 조회 성공: userId={}, token={}", user.get().getUserId(), token);
+            
+            // response를 클라이언트에게 전송
+            HttpResponseHelper.sendJsonResponse(exchange, 200, response);
+            
+        } catch (IllegalArgumentException e) {
+            logger.warn("로그인 실패: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 401, e.getMessage());
+        } catch (JsonSyntaxException e) {
+            logger.error("JSON 파싱 오류: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            logger.error("로그인 처리 오류: {}", e.getMessage());
+            HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
+        }
+    }
 }
