@@ -136,7 +136,7 @@ public class UserHandler implements HttpHandler {
             AuthToken token = userService.login(userId, password);
             Optional<User> user = tokenService.validateToken(token.getToken());
             if (user == null) {
-                throw new NullPointerException("인증 토큰으로 서버 접속 실패}");
+                throw new NullPointerException("인증 토큰으로 서버 접속 실패");
             }
 
             // response 객체 생성

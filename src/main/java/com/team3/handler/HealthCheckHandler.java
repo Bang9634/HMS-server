@@ -118,9 +118,14 @@ public class HealthCheckHandler implements HttpHandler {
             HttpResponseHelper.sendErrorResponse(exchange, 405, "Method Not Allowed - GET 요청만 지원됩니다");
             return;
         }
+
+        // 요청문 헤더에서 토큰 추출
         String token = HttpRequestHelper.extractBearerToken(exchange);
+
+        // 추출한 토큰 검증 및 해당 토큰의 사용자 객체 추출
         Optional<User> user = tokenService.validateToken(token);
         logger.debug("클라이언트에서 전송한 토큰 검증: token = {}", token);
+
         if (user.isEmpty()) {
             logger.debug("유효하지 않은 토큰: userId = {}", user.get().getUserId());
             HttpResponseHelper.sendErrorResponse(exchange, 401, "인증 토큰이 유효하지 않습니다.");
