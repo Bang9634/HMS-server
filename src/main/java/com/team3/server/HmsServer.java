@@ -182,18 +182,18 @@ public class HmsServer {
     public void start() {
         server.start();
         
-        logger.info("╔══════════════════════════════════════════════════════════════╗");
-        logger.info("║                    HMS Server 시작 완료!                      ║");
-        logger.info("╠══════════════════════════════════════════════════════════════╣");
-        logger.info("║  서버 주소: http://{}:{}{}║", 
+        logger.info("══════════════════════════════════════════════════════════════");
+        logger.info("                    HMS Server 시작 완료!                      ");
+        logger.info("══════════════════════════════════════════════════════════════");
+        logger.info("  서버 주소: http://{}:{}{}", 
             host, port, " ".repeat(Math.max(1, 39 - (host + ":" + port).length())));
-        logger.info("║  상태 확인: http://{}:{}/health{}║", 
+        logger.info("  상태 확인: http://{}:{}/health{}", 
             host, port, " ".repeat(Math.max(1, 32 - (host + ":" + port).length())));
-        logger.info("║                                                              ║");
-        logger.info("║  CORS 설정: localhost:3000, localhost:8080 허용              ║");
-        logger.info("║  스레드 풀: {} 개 스레드로 동시 요청 처리{}║", 
+        logger.info("                                                              ");
+        logger.info("  CORS 설정: localhost:3000, localhost:8080 허용              ");
+        logger.info("  스레드 풀: {} 개 스레드로 동시 요청 처리{}", 
             THREAD_POOL_SIZE, " ".repeat(Math.max(1, 36 - String.valueOf(THREAD_POOL_SIZE).length())));
-        logger.info("╚══════════════════════════════════════════════════════════════╝");
+        logger.info("══════════════════════════════════════════════════════════════");
         
         // 개발자를 위한 빠른 테스트 가이드
         logger.info("💡 빠른 테스트:");
@@ -226,15 +226,15 @@ public class HmsServer {
         // graceful shutdown - 처리 중인 요청들의 완료를 기다림
         server.stop(SHUTDOWN_DELAY_SECONDS);
         
-        logger.info("╔══════════════════════════════════════════════════════════════╗");
-        logger.info("║                    HMS Server 서버 종료 완료                       ║");
-        logger.info("║                                                              ║");
-        logger.info("║  모든 요청 처리가 완료되었습니다.                              ║");
-        logger.info("║  서버 리소스가 정리되었습니다.                                 ║");
-        logger.info("║                                                              ║");
-        logger.info("║  서버 주소: http://{}:{}{}║", 
+        logger.info("══════════════════════════════════════════════════════════════");
+        logger.info("                    HMS Server 서버 종료 완료                       ");
+        logger.info("                                                              ");
+        logger.info("  모든 요청 처리가 완료되었습니다.                              ");
+        logger.info("  서버 리소스가 정리되었습니다.                                 ");
+        logger.info("                                                              ");
+        logger.info("  서버 주소: http://{}:{}{}║", 
             host, port, " ".repeat(Math.max(1, 39 - (host + ":" + port).length())));
-        logger.info("╚══════════════════════════════════════════════════════════════╝");
+        logger.info("══════════════════════════════════════════════════════════════");
     }
     
     /**
