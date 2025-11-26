@@ -72,4 +72,6 @@ public interface UserRepository {
      * @return 관리자 권한 사용자가 몇 명인지 반환한다.
      */
     long countAdmins();
+
+    long countUsers();
 }

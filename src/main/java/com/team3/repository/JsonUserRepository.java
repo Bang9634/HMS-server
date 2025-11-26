@@ -64,6 +64,7 @@ public class JsonUserRepository implements UserRepository {
         if (!updated) {
             users.add(user);
             logger.debug("새 사용자 추가: {}", user.getUserId());
+            countUsers();
         }
         
         fileManager.writeAll(users);
@@ -168,6 +169,19 @@ public class JsonUserRepository implements UserRepository {
             .count();
         
         logger.debug("관리자 사용자 수: {}", count);
+        return count;
+    }
+
+    /**
+     * 관리자 역할 사용자의 수를 반환한다.
+     * 
+     * @return 관리자 역할 사용자의 수
+     */
+    @Override
+    public long countUsers() {
+        long count = fileManager.readAll().stream().count();
+        
+        logger.debug("사용자 수: {}", count);
         return count;
     }
 

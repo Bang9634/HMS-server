@@ -55,8 +55,8 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public String getEmail() { return userName; }
-    public void setEmail(String userName) { 
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { 
         this.userName = userName;
         this.updatedAt = LocalDateTime.now();
     }
