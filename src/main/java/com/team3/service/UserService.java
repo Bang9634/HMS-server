@@ -50,9 +50,12 @@ public class UserService {
      * 
      * @param userRepository 의존성 주입할 userRepository 객체
      * 
-     * @throws NullPointerException userRepository가 null인 경우
+     * @throws IllegalArgumentException userRepository가 null인 경우
      */
-    public UserService(UserRepository userRepository) throws NullPointerException{
+    public UserService(UserRepository userRepository) {
+        if (userRepository == null) {
+            throw new IllegalArgumentException("UserRepository는 null일 수 없습니다.");
+        }
         this.userRepository = userRepository;
         ensureAdminExists();
     }
@@ -137,7 +140,10 @@ public class UserService {
      */
     public void logout(String token) {
         logger.info("로그아웃 요청: token={}", token);
-        
+        if (token == null) {
+            logger.warn("null 토큰으로 로그 아웃 시도");
+            return;
+        }
         AuthToken removed = tokenStore.remove(token);
         if (removed != null) {
             logger.info("로그아웃 완료: userId={}", removed.getUserId());
@@ -154,6 +160,11 @@ public class UserService {
      */
     public Optional<User> validateToken(String token) {
         logger.debug("토큰 검증: {}", token);
+
+        if (token == null) {
+            logger.warn("유효하지 않는 토큰: {}", token);
+            return Optional.empty();
+        }
         
         AuthToken authToken = tokenStore.get(token);
         

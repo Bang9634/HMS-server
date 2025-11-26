@@ -109,7 +109,7 @@ public class UserController {
             response.put("message", "로그인 성공");
             response.put("token", token.getToken());
             response.put("expiresAt", token.getExpiresAt().toString());
-            logger.info("로그인 성공: userId={}, clientIP={}", userId, clientIP);
+            logger.info("로그인 성공: userId={}, clientIP={}, token={}", userId, clientIP, token);
             
             // response를 클라이언트에게 전송
             HttpResponseHelper.sendJsonResponse(exchange, 200, response);

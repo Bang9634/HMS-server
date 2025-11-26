@@ -42,14 +42,14 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.5.0</version>
+            <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.5.0</version>
+            <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -71,12 +71,25 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.12</version>
         </dependency>
+
+                <!-- ByteBuddy - Java 21 명시적 지원 -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.11</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.14.11</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
-
         <finalName>hms-server</finalName>
-
         <plugins>
             <!-- Maven Compiler Plugin -->
             <plugin>
@@ -92,7 +105,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.2.3</version>
+                <configuration>
+                    <argLine>
+                        -Dnet.bytebuddy.experimental=true
+                    </argLine>
+                </configuration>
             </plugin>
 
             <!-- Maven Shade Plugin (Fat JAR 생성) -->
