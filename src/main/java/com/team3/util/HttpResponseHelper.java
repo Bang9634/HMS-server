@@ -3,6 +3,7 @@ package com.team3.util;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.HttpExchange;
 
 /**
@@ -26,7 +28,10 @@ import com.sun.net.httpserver.HttpExchange;
  */
 public class HttpResponseHelper {
     private static final Logger logger = LoggerFactory.getLogger(HttpResponseHelper.class);
-    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+        .setPrettyPrinting()  // 가독성 좋은 JSON 포맷
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())  // ← 추가!
+        .create();
     
     /**
      * private 생성자 - 유틸리티 클래스는 인스턴스화 불가

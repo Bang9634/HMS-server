@@ -1,6 +1,7 @@
 package com.team3.handler;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -20,6 +22,7 @@ import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.HttpRequestHelper;
 import com.team3.util.HttpResponseHelper;
+import com.team3.util.LocalDateTimeAdapter;
 
 /**
  * 사용자 관련 HTTP 요청 처리 컨트롤러
@@ -44,7 +47,10 @@ public class UserHandler implements HttpHandler {
     private final TokenService tokenService;
 
     /** JSON을 다루기 위한 Gson 인스턴스 */
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder()
+        .setPrettyPrinting()  // 가독성 좋은 JSON 포맷
+        .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())  // ← 추가!
+        .create();
     
     /**
      * UserController 객체를 생성하는 생성자
@@ -72,7 +78,7 @@ public class UserHandler implements HttpHandler {
             // 라우팅
             if (path.endsWith("/login") && "POST".equals(method)) {
                 handleLogin(exchange);
-            } if (path.endsWith("/get-users") && "GET".equals(method)) {
+            } else if (path.endsWith("/get-users") && "GET".equals(method)) {
                 handleGetUsers(exchange);
             } else {
                 logger.warn("잘못된 요청: {} {}", method, path);
@@ -199,13 +205,13 @@ public class UserHandler implements HttpHandler {
             HttpResponseHelper.sendJsonResponse(exchange, 200, response);
             
         } catch (IllegalArgumentException e) {
-            logger.warn("로그인 실패: {}", e.getMessage());
+            logger.warn("사용자 목록 조회 실패: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 401, e.getMessage());
         } catch (JsonSyntaxException e) {
             logger.error("JSON 파싱 오류: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
         } catch (IOException | RuntimeException e) {
-            logger.error("로그인 처리 오류: {}", e.getMessage());
+            logger.error("사용자 목록 조회 처리 오류: {}", e.getMessage());
             HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
         }
     }
