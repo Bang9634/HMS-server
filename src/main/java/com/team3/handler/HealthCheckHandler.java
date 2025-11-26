@@ -1,8 +1,6 @@
-package com.team3.server;
+package com.team3.handler;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -11,10 +9,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.team3.util.HttpResponseHelper;
 
 /**
  * 서버 헬스 체크를 위한 HTTP 핸들러
@@ -58,14 +55,12 @@ public class HealthCheckHandler implements HttpHandler {
     /** SLF4J 로거 인스턴스 - 헬스 체크 요청을 로깅 */
     private static final Logger logger = LoggerFactory.getLogger(HealthCheckHandler.class);
     
-    /** JSON 직렬화를 위한 Gson 인스턴스 */
-    private final Gson gson = new Gson();
-    
     /** 서버 시작 시간 (업타임 계산용) */
     private static final long SERVER_START_TIME = System.currentTimeMillis();
 
     /** 날짜/시간 포맷터 (ISO 8601 형식) */
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = 
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     /**
      * 헬스 체크 요청을 처리하는 메인 메서드
@@ -106,28 +101,21 @@ public class HealthCheckHandler implements HttpHandler {
         // HTTP 메서드 검증 - GET만 허용
         if (!"GET".equals(method)) {
             logger.warn("헬스 체크에 잘못된 HTTP 메서드 사용: method={}, clientIP={}", method, clientIP);
-            sendErrorResponse(exchange, 405, "Method Not Allowed - GET 요청만 지원됩니다");
+            HttpResponseHelper.sendErrorResponse(exchange, 405, "Method Not Allowed - GET 요청만 지원됩니다");
             return;
         }
         
         try {
             // 헬스 상태 정보 수집
             Map<String, Object> healthStatus = createHealthStatusInfo();
-            
-            // JSON 응답 생성
-            String jsonResponse = gson.toJson(healthStatus);
-            
             logger.debug("헬스 체크 응답 생성 완료: status={}", healthStatus.get("status"));
             
             // 성공 응답 전송
-            sendHealthResponse(exchange, jsonResponse);
+            HttpResponseHelper.sendJsonResponse(exchange, 200,healthStatus);
             
-        } catch (JsonSyntaxException e) {
-            logger.error("JSON 파싱 오류: clientIP={}", clientIP, e);
-            sendErrorResponse(exchange, 400, "Invalid JSON format: " + e.getMessage());
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException e) {
             logger.error("헬스 체크 처리 오류: clientIP={}", clientIP, e);
-            sendErrorResponse(exchange, 500, "Internal server error");
+            HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal server error");
         }
     }
 
@@ -193,77 +181,5 @@ public class HealthCheckHandler implements HttpHandler {
         } else {
             return String.format("%d seconds", seconds);
         }
-    }
-
-    /**
-     * 성공적인 헬스 체크 응답을 전송하는 헬퍼 메서드
-     * <p>
-     * JSON 형태의 헬스 상태 정보를 HTTP 200 OK 응답으로 전송한다.
-     * CORS 헤더를 포함하여 브라우저에서도 접근 가능하도록 한다.
-     * </p>
-     * 
-     * @param exchange HTTP 요청/응답 교환 객체
-     * @param jsonResponse 전송할 JSON 응답 문자열
-     * @throws IOException 응답 전송 중 I/O 오류가 발생한 경우
-     */
-    private void sendHealthResponse(HttpExchange exchange, String jsonResponse) throws IOException {
-        // HTTP 응답 헤더 설정
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-        exchange.getResponseHeaders().set("Cache-Control", "no-cache"); // 헬스 체크 결과는 캐시하지 않음
-        
-        // UTF-8 바이트 배열로 변환
-        byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
-        
-        // HTTP 200 OK 응답 전송
-        exchange.sendResponseHeaders(200, responseBytes.length);
-        
-        // 응답 본문 전송
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(responseBytes);
-        }
-        
-        logger.debug("헬스 체크 응답 전송 완료: length={} bytes", responseBytes.length);
-    }
-
-    /**
-     * 오류 응답을 전송하는 헬퍼 메서드
-     * <p>
-     * 헬스 체크 처리 중 발생한 오류에 대해 적절한 HTTP 상태 코드와 
-     * 오류 메시지를 포함한 JSON 응답을 전송한다.
-     * </p>
-     * 
-     * @param exchange HTTP 요청/응답 교환 객체
-     * @param statusCode HTTP 오류 상태 코드
-     * @param message 오류 메시지
-     * @throws IOException 응답 전송 중 I/O 오류가 발생한 경우
-     */
-    private void sendErrorResponse(HttpExchange exchange, int statusCode, String message) throws IOException {
-        // 표준 오류 응답 구조
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("status", "ERROR");
-        errorResponse.put("error", message);
-        errorResponse.put("timestamp", LocalDateTime.now().format(DATE_TIME_FORMATTER));
-        
-        String jsonResponse = gson.toJson(errorResponse);
-        
-        // HTTP 응답 헤더 설정
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        
-        // UTF-8 바이트 배열로 변환
-        byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
-        
-        // 오류 응답 전송
-        exchange.sendResponseHeaders(statusCode, responseBytes.length);
-        
-        // 응답 본문 전송
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(responseBytes);
-        }
-        
-        logger.warn("헬스 체크 오류 응답 전송: statusCode={}, message={}", statusCode, message);
     }
 }

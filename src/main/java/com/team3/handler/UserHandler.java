@@ -1,4 +1,4 @@
-package com.team3.controller;
+package com.team3.handler;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.team3.dto.request.LoginRequest;
 import com.team3.model.AuthToken;
 import com.team3.service.UserService;
@@ -29,10 +30,10 @@ import com.team3.util.HttpResponseHelper;
  * @author bang9634
  * @since 2025-11-10
  */
-public class UserController {
+public class UserHandler implements HttpHandler {
 
     /** SLF4J Logger 인스턴스 - 요청 처리 로그를 기록 */
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserHandler.class);
     
     /** 사용자 비즈니스 로직 처리 서비스 */
     private final UserService userService;
@@ -45,10 +46,37 @@ public class UserController {
      * 
      * @param userService 사용자 관련 비즈니스 로직을 처리하는 서비스 객체
      */
-    public UserController(UserService userService) {
+    public UserHandler(UserService userService) {
+        if (userService == null) {
+            throw new IllegalArgumentException("UserService는 null일 수 없습니다.");
+        }
         this.userService = userService;
     }
     
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        String clientIP = exchange.getRemoteAddress().getAddress().getHostAddress();
+        String path = exchange.getRequestURI().getPath();
+        
+        logger.debug("사용자 요청 수신: method={}, clientIP={}", method, clientIP);
+
+        try {
+            // 라우팅
+            if (path.endsWith("/login") && "POST".equals(method)) {
+                handleLogin(exchange);
+            } else {
+                logger.warn("잘못된 요청: {} {}", method, path);
+                HttpResponseHelper.sendErrorResponse(exchange, 404, "Not Found");
+            }
+            
+        } catch (IOException e) {
+            logger.error("요청 처리 중 오류 발생", e);
+            HttpResponseHelper.sendErrorResponse(exchange, 500, "Internal Server Error");
+        }
+    }
+
     /**
      * 로그인 인증 요청을 처리하는 메서드
      * <p>
@@ -59,7 +87,7 @@ public class UserController {
      * 
      * @param exchange HTTP 요청/응답 처리를 위한 교환 객체
      * @throws IOException 네트워크 I/O 처리 중 오류가 발생한 경우
-     * @author wnwoghd
+     * 
      * @apiNote LoginRequest DTO를 사용하여 타입 안정성을 보장함
      */
     public void handleLogin(HttpExchange exchange) throws IOException {

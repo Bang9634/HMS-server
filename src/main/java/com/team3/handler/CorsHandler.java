@@ -1,4 +1,4 @@
-package com.team3.server;
+package com.team3.handler;
 
 import java.io.IOException;
 import java.io.OutputStream;

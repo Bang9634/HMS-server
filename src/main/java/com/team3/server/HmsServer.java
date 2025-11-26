@@ -2,18 +2,17 @@ package com.team3.server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.team3.config.EnvironmentConfig;
-import com.team3.controller.UserController;
-import com.team3.service.UserService;
 
 /**
  * PlanP 애플리케이션의 메인 HTTP 서버 클래스
@@ -45,9 +44,9 @@ import com.team3.service.UserService;
  * @since 2025-11-10
  * 
  * @see com.sun.net.httpserver.HttpServer
- * @see com.team3.controller.UserController
+ * @see com.team3.handler.UserHandler
  * @see com.team3.server.CorsFilter
- * @see com.team3.server.HealthCheckHandler
+ * @see com.team3.handler.HealthCheckHandler
  * 
  * @implNote Java 내장 HttpServer 사용
  */
@@ -64,6 +63,8 @@ public class HmsServer {
     
     /** 서버 바인딩 포트 번호 */
     private final int port;
+
+    private final Map<String, HttpHandler> handlers;
     
     /** 스레드 풀 크기 (동시 처리 가능한 요청 수) */
     private static final int THREAD_POOL_SIZE = 10;
@@ -89,32 +90,25 @@ public class HmsServer {
      *   <li>스레드 풀 설정</li>
      * </ol>
      * 
-     * @param host 서버를 바인딩할 호스트 주소 (예: "localhost", "0.0.0.0")
-     * @param port 서버를 바인딩할 포트 번호 (예: 8080, 3000)
-     * @param userService 사용자 관련 비즈니스 로직을 처리하는 서비스
+     * @param builder
      * 
      * @throws IOException 서버 생성 중 네트워크 오류가 발생한 경우
      * @throws IllegalArgumentException 잘못된 호스트나 포트가 제공된 경우
      * 
      * @implNote 서버는 생성만 되고 실제 시작은 start() 메서드 호출 시
      */
-    public HmsServer(String host, int port, UserService userService) throws IOException {
-        this.host = host;
-        this.port = port;
-        this.allowedOrigins = Arrays.asList(EnvironmentConfig.getAllowedOrigins());
+    private HmsServer(Builder builder) throws IOException {
+        this.host = builder.host;
+        this.port = builder.port;
+        this.allowedOrigins = builder.allowedOrigins;
+        this.handlers = builder.handlers;
+        
         logger.info("HMS Server 초기화 시작: {}:{}", host, port);
         
-        // HTTP 서버 생성 (백로그 큐 크기는 기본값 0 사용)
         this.server = HttpServer.create(new InetSocketAddress(host, port), 0);
         
-        // 컨트롤러 초기화
-        UserController userController = new UserController(userService);
+        setupRoutes();
         
-
-        // API 라우트 설정
-        setupRoutes(userController);
-        
-        // 고정 크기 스레드 풀 설정 - 동시 요청 처리 최적화
         server.setExecutor(Executors.newFixedThreadPool(THREAD_POOL_SIZE));
         
         logger.info("서버 초기화 완료: {}:{}, 스레드풀크기={}", host, port, THREAD_POOL_SIZE);
@@ -134,26 +128,20 @@ public class HmsServer {
      * 프론트엔드 개발 환경에서 API 호출을 가능하게 한다.
      * </p>
      * 
-     * @param userController 사용자 관련 요청을 처리하는 컨트롤러
-     * 
      * @implNote 새로운 API 추가 시 이 메서드에 라우트 설정을 추가해야 함
      */
-    private void setupRoutes(UserController userController) {
+    private void setupRoutes() {
         logger.info("API 라우트 설정 시작...");
         
         // CORS 필터 인스턴스 생성 (모든 API에서 재사용)
         CorsFilter corsFilter = new CorsFilter(allowedOrigins);
         
-        // 헬스 체크 API - 서버 상태 모니터링용
-        HttpContext healthContext = server.createContext("/health", new HealthCheckHandler());
-        healthContext.getFilters().add(corsFilter);
-        logger.debug("헬스 체크 API 설정: GET /health");
-        
-        // 사용자 로그인 API
-        HttpContext loginContext = server.createContext("/api/users/login", userController::handleLogin);
-        loginContext.getFilters().add(corsFilter);
-        logger.debug("로그인 API 설정: POST /api/users/login");
-        
+        handlers.forEach((path, handler) -> {
+            HttpContext context = server.createContext(path, handler);
+            context.getFilters().add(corsFilter);
+            logger.debug("라우트 설정: {}", path);
+        });
+
         // 라우트 설정 완료 로그
         logger.info("라우트 설정 완료:");
         logger.info("  ├─ GET  /health                    → HealthCheckHandler (헬스 체크)");
@@ -282,5 +270,36 @@ public class HmsServer {
     public String toString() {
         return String.format("HMS_Server{host='%s', port=%d, running=%s}", 
                            host, port, isRunning());
+    }
+
+    public static class Builder {
+        private String host;
+        private int port;
+        private List<String> allowedOrigins;
+        private final Map<String, HttpHandler> handlers = new HashMap<>();
+
+        public Builder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public Builder port(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public Builder allowedOrigins(List<String> origins) {
+            this.allowedOrigins = origins;
+            return this;
+        }
+        
+        public Builder addHandler(String path, HttpHandler handler) {
+            this.handlers.put(path, handler);
+            return this;
+        }
+        
+        public HmsServer build() throws IOException {
+            return new HmsServer(this);
+        }
     }
 }

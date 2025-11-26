@@ -1,6 +1,7 @@
 package com.team3;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -8,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
+import com.team3.handler.HealthCheckHandler;
+import com.team3.handler.UserHandler;
 import com.team3.model.User;
 import com.team3.repository.JsonUserRepository;
 import com.team3.repository.UserRepository;
@@ -147,7 +150,14 @@ public class Main {
             
             // HTTP 서버 생성 및 시작
             System.out.println("\nHTTP 서버 생성 중...");
-            HmsServer server = new HmsServer(host, port, dependencies.userService);
+            HmsServer server = new HmsServer.Builder()
+                .host(host)
+                .port(port)
+                .allowedOrigins(Arrays.asList(EnvironmentConfig.getAllowedOrigins()))
+                .addHandler("/health", dependencies.healthCheckHandler)
+                .addHandler("/api/users/login", dependencies.userHandler::handleLogin)
+                .build();
+
             System.out.println("\nHTTP 서버 생성 완료");
 
             // Shutdown Hook 등록 (Graceful Shutdown)
@@ -424,6 +434,10 @@ public class Main {
         final JsonFileManager<User> jsonFileManager;
         final UserRepository userRepository;
         final UserService userService;
+        final HealthCheckHandler healthCheckHandler;
+        final UserHandler userHandler;
+
+
         /**
          * 모든 의존성을 초기화하는 생성자
          * 
@@ -442,13 +456,17 @@ public class Main {
                     new TypeToken<List<User>>() {}
                 );
 
-
                 logger.info("userRepository 생성");
                 this.userRepository = new JsonUserRepository(jsonFileManager);
-
                 
                 logger.info("UserService 생성");
                 this.userService = new UserService(userRepository);
+
+                logger.info("HealthCheckHandler 생성");
+                this.healthCheckHandler = new HealthCheckHandler();
+
+                logger.info("UserHandler 생성");
+                this.userHandler = new UserHandler(userService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
                 
