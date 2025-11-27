@@ -173,4 +173,8 @@ public class UserService {
         user.setPassword(PasswordUtil.hash(user.getPassword()));
         return userRepository.save(user);
     }
+
+    public Optional<User> deleteUser(String userId) {
+        return userRepository.deleteUser(userId);
+    }
 }

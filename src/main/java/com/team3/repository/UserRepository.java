@@ -80,5 +80,12 @@ public interface UserRepository {
      */
     long countAdmins();
 
+    /**
+     * 사용자의 수를 반환한다.
+     * 
+     * @return 사용자가 몇 명인지 반환한다.
+     */
     long countUsers();
+
+    Optional<User> deleteUser(String userId);
 }

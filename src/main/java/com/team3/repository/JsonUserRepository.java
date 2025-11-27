@@ -201,4 +201,29 @@ public class JsonUserRepository implements UserRepository {
         return count;
     }
 
+    /**
+     * 사용자 아이디로 사용자를 삭제한다.
+     * 
+     * @param userId 삭제할 사용자 아이디
+     * @return 삭제한 사용자 객체를 반환한다. 없으면 빈 Optional을 반환한다.
+     */
+    @Override
+    public Optional<User> deleteUser(String userId) {
+        logger.info("사용자 삭제 시도: {}", userId);
+
+        List<User> users = fileManager.readAll();
+        
+        // 기존 사용자 삭제
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).getUserId().equals(userId)) {
+                Optional<User> user = Optional.of(users.remove(i));
+                logger.debug("기존 사용자 삭제 성공: {}", userId);
+                fileManager.writeAll(users);
+                return user;
+            }
+        }
+        logger.debug("기존 사용자 존재하지 않음");
+        return Optional.empty();
+    }
+
 }
