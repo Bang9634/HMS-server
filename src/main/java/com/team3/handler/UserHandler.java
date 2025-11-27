@@ -298,6 +298,14 @@ public class UserHandler implements HttpHandler {
 
             // User 모델로 변환
             User userDeleted = gson.fromJson(requestBody, User.class);
+
+            // 사용자가 자기 자신을 삭제하는 것을 방지
+            if (user.get().getUserId().equals(userDeleted.getUserId())) {   
+                logger.debug("사용자 본인 삭제 시도 감지: userId = {}", userDeleted.getUserId());
+                HttpResponseHelper.sendErrorResponse(exchange, 401, "사용자 본인을 삭제할 수 없습니다.");
+                return;
+            }
+
             if (userService.deleteUser(userDeleted.getUserId()).isEmpty()) {
                 logger.warn("사용자 삭제 실패: 아이디 존재가 존재하지 않음={}", userDeleted.getUserId());
                 HttpResponseHelper.sendErrorResponse(exchange, 401, "존재하지 않는 아이디입니다.");
