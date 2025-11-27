@@ -77,7 +77,7 @@ public class HttpResponseHelper {
             throws IOException {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
-        errorResponse.put("error", message);
+        errorResponse.put("message", message);
         errorResponse.put("timestamp", System.currentTimeMillis());
         
         logger.warn("오류 응답 전송: statusCode={}, message={}", statusCode, message);
