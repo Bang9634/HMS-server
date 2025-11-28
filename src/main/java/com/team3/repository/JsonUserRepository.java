@@ -208,6 +208,7 @@ public class JsonUserRepository implements UserRepository {
      * @return 삭제한 사용자 객체를 반환한다. 없으면 빈 Optional을 반환한다.
      */
     @Override
+    @Deprecated
     public Optional<User> deleteUser(String userId) {
         logger.info("사용자 삭제 시도: {}", userId);
 

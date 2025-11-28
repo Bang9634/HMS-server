@@ -109,16 +109,19 @@ public class UserService {
         }
 
         // 사용자 확인
+        logger.debug("사용자 존재 유무 확인 시도: userId={}", userId);
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
         
         // 비밀번호 확인
+        logger.debug("비밀번호 검사 시도");
         if (!PasswordUtil.verify(password, user.getPassword())) {
             logger.warn("로그인 실패 - 잘못된 비밀번호: userId={}", userId);
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
         }
 
         // 토큰 발급
+        logger.debug("인증 성공 토큰 발급 시도");
         AuthToken token = tokenService.generateToken(userId);
         
         logger.info("로그인 성공: userId={}, token={}", userId, token.getToken());

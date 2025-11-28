@@ -10,11 +10,16 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
 import com.team3.handler.HealthCheckHandler;
+import com.team3.handler.RoomHandler;
 import com.team3.handler.UserHandler;
+import com.team3.model.Room;
 import com.team3.model.User;
+import com.team3.repository.JsonRoomRepository;
 import com.team3.repository.JsonUserRepository;
+import com.team3.repository.RoomRepository;
 import com.team3.repository.UserRepository;
 import com.team3.server.HmsServer;
+import com.team3.service.RoomService;
 import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.JsonFileManager;
@@ -156,10 +161,8 @@ public class Main {
                 .port(port)
                 .allowedOrigins(Arrays.asList(EnvironmentConfig.getAllowedOrigins()))
                 .addHandler("/health", dependencies.healthCheckHandler)
-                .addHandler("/api/users/login", dependencies.userHandler)
-                .addHandler("/api/users/get-users", dependencies.userHandler)
-                .addHandler("/api/users/add-user", dependencies.userHandler)
-                .addHandler("/api/users/delete-user", dependencies.userHandler)
+                .addHandler("/api/users", dependencies.userHandler)
+                .addHandler("/api/rooms", dependencies.roomHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -433,16 +436,21 @@ public class Main {
      */
     private static class Dependencies {
         /** 데이터를 저장할 파일의 경로. 프로젝트 루트 디렉토리 기준으로 작성 */
-        private static final String DATA_FILE = "data/users.json";
+        private static final String USER_DATA_FILE = "data/users.json";
+        private static final String ROOM_DATA_FILE = "data/rooms.json";
         
-        final JsonFileManager<User> jsonFileManager;
+        final JsonFileManager<User> userJsonFileManager;
+        final JsonFileManager<Room> roomJsonFileManager;
         final UserRepository userRepository;
+        final RoomRepository roomRepository;
 
         final TokenService tokenService;
         final UserService userService;
+        final RoomService roomService;
 
         final HealthCheckHandler healthCheckHandler;
         final UserHandler userHandler;
+        final RoomHandler roomHandler;
 
 
         /**
@@ -457,14 +465,23 @@ public class Main {
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
             try {
-                logger.info("JsonFileManager 생성");
-                this.jsonFileManager = new JsonFileManager<>(
-                    DATA_FILE, 
+                logger.info("userJsonFileManager 생성");
+                this.userJsonFileManager = new JsonFileManager<>(
+                    USER_DATA_FILE, 
                     new TypeToken<List<User>>() {}
                 );
 
+                logger.info("roomJsonFileManager 생성");
+                this.roomJsonFileManager = new JsonFileManager<>(
+                    ROOM_DATA_FILE, 
+                    new TypeToken<List<Room>>() {}
+                );
+
                 logger.info("userRepository 생성");
-                this.userRepository = new JsonUserRepository(jsonFileManager);
+                this.userRepository = new JsonUserRepository(userJsonFileManager);
+
+                logger.info("roomRepository 생성");
+                this.roomRepository = new JsonRoomRepository(roomJsonFileManager);
 
                 logger.info("TokenService 생성");
                 this.tokenService = new TokenService(userRepository);
@@ -472,11 +489,17 @@ public class Main {
                 logger.info("UserService 생성");
                 this.userService = new UserService(userRepository, tokenService);
 
+                logger.info("RoomService 생성");
+                this.roomService = new RoomService(roomRepository);
+
                 logger.info("HealthCheckHandler 생성");
                 this.healthCheckHandler = new HealthCheckHandler(tokenService);
 
                 logger.info("UserHandler 생성");
                 this.userHandler = new UserHandler(userService, tokenService);
+
+                logger.info("RoomHandler 생성");
+                this.roomHandler = new RoomHandler(tokenService, roomService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
                 
