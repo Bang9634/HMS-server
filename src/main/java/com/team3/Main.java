@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
+import com.team3.handler.CustomerHandler;
 import com.team3.handler.HealthCheckHandler;
 import com.team3.handler.RoomHandler;
 import com.team3.handler.UserHandler;
@@ -26,9 +27,13 @@ import com.team3.util.JsonFileManager;
 
 // 예약 관련 import
 import com.team3.handler.ReservationHandler;
+import com.team3.model.Customer;
 import com.team3.model.Reservation;
+import com.team3.repository.CustomerRepository;
+import com.team3.repository.JsonCustomerRepository;
 import com.team3.repository.JsonReservationRepository;
 import com.team3.repository.ReservationRepository;
+import com.team3.service.CustomerService;
 import com.team3.service.ReservationService;
 
 
@@ -171,6 +176,11 @@ public class Main {
                 .addHandler("/api/users", dependencies.userHandler)
                 .addHandler("/api/rooms", dependencies.roomHandler)
                 .addHandler("/api/reservation", dependencies.reservationHandler)
+                 // customer 핸들러
+                .addHandler("/api/customer/add", dependencies.customerHandler)
+                .addHandler("/api/customer/list", dependencies.customerHandler)
+                .addHandler("/api/customer/search", dependencies.customerHandler)
+                .addHandler("/api/customer/delete", dependencies.customerHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -447,6 +457,8 @@ public class Main {
         private static final String USER_DATA_FILE = "data/users.json";
         private static final String ROOM_DATA_FILE = "data/rooms.json";
         private static final String RESERVATION_FILE = "data/reservations.json";
+        // Customer 파일 경로
+        private static final String CUSTOMER_FILE = "data/customers.json";
         
         final TokenService tokenService;
 
@@ -467,6 +479,12 @@ public class Main {
         final ReservationRepository reservationRepository;
         final ReservationService reservationService;
         final ReservationHandler reservationHandler;
+        
+        // Customer 관련 필트
+        final JsonFileManager<Customer> customerFileManager;
+        final CustomerRepository customerRepository;
+        final CustomerService customerService;
+        final CustomerHandler customerHandler;
 
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
@@ -503,6 +521,12 @@ public class Main {
                 this.userHandler = new UserHandler(userService, tokenService);
                 this.roomHandler = new RoomHandler(tokenService, roomService);
                 this.reservationHandler = new ReservationHandler(reservationService, tokenService);
+                
+                logger.info("Customer 생성");
+                this.customerFileManager = new JsonFileManager<>(CUSTOMER_FILE, new TypeToken<List<Customer>>() {});
+                this.customerRepository = new JsonCustomerRepository(customerFileManager);
+                this.customerService = new CustomerService(customerRepository);
+                this.customerHandler = new CustomerHandler(customerService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
             } catch (Exception e) {
