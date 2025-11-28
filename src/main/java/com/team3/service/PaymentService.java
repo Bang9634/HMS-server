@@ -75,4 +75,12 @@ public class PaymentService {
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
     }
+    
+    /*
+    * 결제 내역 삭제 기능
+    */
+    public void clearAllHistory(){
+        paymentRepository.deleteAll();
+    }
+    
 }
