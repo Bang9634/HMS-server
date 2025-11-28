@@ -28,7 +28,7 @@ import com.sun.net.httpserver.HttpHandler;
  * 
  * <h3>처리하는 요청:</h3>
  * <ul>
- *   <li><strong>GET /</strong> → "PlanP Backend Server is running!" 메시지</li>
+ *   <li><strong>GET /</strong> → "HMS Server is running!" 메시지</li>
  *   <li><strong>OPTIONS *</strong> → CORS Preflight 응답 (200 OK)</li>
  *   <li><strong>* /*</strong> → 404 Not Found (정의되지 않은 경로)</li>
  * </ul>
@@ -41,10 +41,6 @@ import com.sun.net.httpserver.HttpHandler;
  * 
  * @author bang9634
  * @since 2025-11-10
- * 
- * @see com.sun.net.httpserver.HttpHandler
- * @see com.team3.server.CorsFilter
- * @see com.team3.server.PlanPServer
  * 
  * @implNote 이 핸들러는 fallback 역할을 하므로 다른 구체적인 핸들러들보다 나중에 등록되어야 함
  */

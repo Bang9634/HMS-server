@@ -27,7 +27,8 @@ import com.team3.util.LocalDateTimeAdapter;
  * <p>
  * /api/reservation/* 경로로 들어오는 요청을 처리한다.
  * </p>
- * * @author bang9634
+ * 
+ * @author LSM
  * @since 2025-11-28
  */
 public class ReservationHandler implements HttpHandler {

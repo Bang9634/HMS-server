@@ -18,13 +18,6 @@ package com.team3.config;
  *   <li>전역 기본값 (환경변수가 없을 때 사용)</li>
  * </ol>
  * 
- * <h3>지원하는 환경변수:</h3>
- * <ul>
- *   <li><code>PLANP_HOST</code> - 서버 바인딩 호스트</li>
- *   <li><code>PLANP_PORT</code> - 서버 포트 번호</li>
- *   <li><code>PLANP_ALLOWED_ORIGINS</code> - CORS 허용 오리진 (쉼표로 구분)</li>
- * </ul>
- * 
  * @author bang9634
  * @since 2025-11-15
  * 
@@ -103,22 +96,9 @@ public class EnvironmentConfig {
      *   <li><code>http://192.168.1.100:8080</code> - 특정 IP와 포트</li>
      * </ul>
      * 
-     * <h4>설정 예시:</h4>
-     * <pre>{@code
-     * // 환경변수 설정
-     * export HMS_SEVER_ALLOWED_ORIGINS="http://localhost:3000,https://myapp.com,https://www.myapp.com"
-     * 
-     * // 코드에서 사용
-     * String[] origins = EnvironmentConfig.getAllowedOrigins();
-     * for (String origin : origins) {
-     *     corsPolicy.addAllowedOrigin(origin);
-     * }
-     * }</pre>
-     * 
-     * 
      * @return 허용할 오리진 배열 (기본값: ["http://localhost:3000"])
      * 
-     * @see com.drhong.server.CorsFilter
+     * @see com.team3.server.CorsFilter
      */
     public static String[] getAllowedOrigins() {
         String origins = getEnvValue("HMS_SERVER_ALLOWED_ORIGINS", "http://localhost:3000");
@@ -138,13 +118,6 @@ public class EnvironmentConfig {
      *   <li>값이 존재하면 해당 값 반환</li>
      *   <li>값이 null이면 기본값 반환</li>
      * </ol>
-     * 
-     * <h4>사용 예시:</h4>
-     * <pre>{@code
-     * String host = getEnvValue("PLANP_HOST", "localhost");
-     * String port = getEnvValue("PLANP_PORT", "8080");
-     * String database = getEnvValue("MYSQL_DATABASE", "planp_db");
-     * }</pre>
      * 
      * @param key 조회할 환경변수명 (예: "PLANP_HOST", "MYSQL_PORT")
      * @param defaultValue 환경변수가 없을 때 사용할 기본값
@@ -178,8 +151,6 @@ public class EnvironmentConfig {
      * </pre>
      * 
      * @apiNote 서버 시작 시 Main 클래스에서 호출되어 설정 확인용으로 사용
-     * 
-     * @see com.drhong.Main#main(String[])
      */
     public static void printConfig() {
         System.out.println("=== HMS Server 환경 설정 ===");

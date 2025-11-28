@@ -175,12 +175,7 @@ public class HealthCheckHandler implements HttpHandler {
         
         // JVM 기본 정보 (선택사항)
         healthStatus.put("javaVersion", System.getProperty("java.version"));
-        
-        // 추가 가능한 정보들 (향후 확장)
-        // healthStatus.put("dbStatus", checkDatabaseConnection());
-        // healthStatus.put("memoryUsage", getMemoryUsage());
-        // healthStatus.put("activeConnections", getActiveConnectionCount());
-        
+
         return healthStatus;
     }
 
