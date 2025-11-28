@@ -3,7 +3,7 @@ package com.team3.handler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.google.gson.Gson;
-import com.team3.dto.request.PaymentRequest;
+
 import com.team3.model.Payment;
 import com.team3.service.PaymentService;
 import com.team3.service.TokenService;
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PaymentHandler implements HttpHandler {
 
-    // 로거 객체 생성 (printStackTrace 대신 사용)
+    // 로거 객체 생성
     private static final Logger logger = LoggerFactory.getLogger(PaymentHandler.class);
 
     private final PaymentService paymentService;
@@ -62,20 +62,22 @@ public class PaymentHandler implements HttpHandler {
     private void handleProcessPayment(HttpExchange exchange) throws IOException {
         try {
             InputStreamReader reader = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
-            PaymentRequest request = gson.fromJson(reader, PaymentRequest.class);
             
-            paymentService.processPayment(request);
+            // [수정] JSON을 Payment 클래스로 바로 변환 (Request DTO 삭제됨)
+            Payment payment = gson.fromJson(reader, Payment.class);
+            
+            paymentService.processPayment(payment);
             
             String response = gson.toJson("결제가 성공적으로 처리되었습니다.");
             sendResponse(exchange, 200, response);
             
-            logger.info("결제 처리 완료: {}", request.getGuestName());
+            logger.info("결제 처리 완료: {}", payment.getGuestName());
 
         } catch (IllegalArgumentException e) {
             logger.warn("결제 요청 데이터 오류: {}", e.getMessage());
             sendResponse(exchange, 400, e.getMessage());
         } catch (Exception e) {
-            // [수정] printStackTrace 대신 logger 사용 (에러 내용과 스택트레이스를 로그 파일에 남김)
+            // [수정] printStackTrace 대신 logger 사용
             logger.error("결제 처리 중 서버 내부 오류 발생", e); 
             sendResponse(exchange, 500, "Internal Server Error");
         }
