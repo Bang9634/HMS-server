@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
+import com.team3.handler.FnbHandler;
 import com.team3.handler.HealthCheckHandler;
 import com.team3.handler.RoomHandler;
 import com.team3.handler.UserHandler;
@@ -26,9 +27,14 @@ import com.team3.util.JsonFileManager;
 
 // 예약 관련 import
 import com.team3.handler.ReservationHandler;
+import com.team3.handler.FnbHandler;
+import com.team3.model.FnbItem;
 import com.team3.model.Reservation;
+import com.team3.repository.FnbRepository;
+import com.team3.repository.JsonFnbRepository;
 import com.team3.repository.JsonReservationRepository;
 import com.team3.repository.ReservationRepository;
+import com.team3.service.FnbService;
 import com.team3.service.ReservationService;
 
 
@@ -171,6 +177,11 @@ public class Main {
                 .addHandler("/api/users", dependencies.userHandler)
                 .addHandler("/api/rooms", dependencies.roomHandler)
                 .addHandler("/api/reservation", dependencies.reservationHandler)
+                 
+                //Fnb 핸들러
+                .addHandler("/api/fnb/add", dependencies.fnbHandler)
+                .addHandler("/api/fnb/list", dependencies.fnbHandler)
+                .addHandler("/api/fnb/delete", dependencies.fnbHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -447,6 +458,8 @@ public class Main {
         private static final String USER_DATA_FILE = "data/users.json";
         private static final String ROOM_DATA_FILE = "data/rooms.json";
         private static final String RESERVATION_FILE = "data/reservations.json";
+        // Fnb 저장 파일 경로
+        private static final String FNB_FILE = "data/fnb.json";
         
         final TokenService tokenService;
 
@@ -467,6 +480,12 @@ public class Main {
         final ReservationRepository reservationRepository;
         final ReservationService reservationService;
         final ReservationHandler reservationHandler;
+        
+        // 3. Fnb 관련 필드
+        final JsonFileManager<FnbItem> fnbFileManager;
+        final FnbRepository fnbRepository;
+        final FnbService fnbService;
+        final FnbHandler fnbHandler;
 
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
@@ -503,6 +522,12 @@ public class Main {
                 this.userHandler = new UserHandler(userService, tokenService);
                 this.roomHandler = new RoomHandler(tokenService, roomService);
                 this.reservationHandler = new ReservationHandler(reservationService, tokenService);
+                
+                logger.info("FnbItem 생성");
+                this.fnbFileManager = new JsonFileManager<>(FNB_FILE, new TypeToken<List<FnbItem>>() {});
+                this.fnbRepository = new JsonFnbRepository(fnbFileManager);
+                this.fnbService = new FnbService(fnbRepository);
+                this.fnbHandler = new FnbHandler(fnbService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
             } catch (Exception e) {
