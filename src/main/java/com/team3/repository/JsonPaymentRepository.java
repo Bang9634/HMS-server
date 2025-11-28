@@ -53,4 +53,15 @@ public class JsonPaymentRepository implements PaymentRepository {
         // 데이터가 있으면 반환, 없으면(null) 빈 리스트 반환
         return payments != null ? payments : new ArrayList<>();
     }
+    
+    /*
+    * 파일에 있는 모든 결제 내역 삭제
+    */
+    @Override
+    public void deleteAll(){
+        // 빈 리스트 덮어씌워서 파일 내용 전체 삭제
+        fileManager.writeAll(new ArrayList<>());
+    }
+
 }
+
