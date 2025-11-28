@@ -4,6 +4,7 @@ package com.team3.dto.request;
  * PaymentRequest: 클라이언트(프론트)에서 넘어오는 결제 요청 데이터
  * - JSON으로 바꾸기 전, 순수 자바 객체 상태
  * - 결제 요청 데이터 - 누가, 얼마를, 어떻게
+ * @author 김현준
  */
 public class PaymentRequest {
     private String guestName;       // 고객명

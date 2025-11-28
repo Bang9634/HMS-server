@@ -5,6 +5,7 @@ import java.util.List;
 
 /**
  * [결제 저장소 인터페이스]
+ * @author 김현준
  */
 
 // class가 아닌 interface

@@ -12,6 +12,7 @@ import java.util.List;
  * - 금액 계산
  * - 워크인 손님인지 투숙객인지 구분
  * - 최종적으로 리포지토리에게 저장 시킴
+ * @author 김현준
  */
 public class PaymentService {
     
