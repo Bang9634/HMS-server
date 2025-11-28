@@ -41,6 +41,10 @@ public class PaymentHandler implements HttpHandler {
         else if ("GET".equalsIgnoreCase(method) && path.endsWith("/history")) {
             handleGetHistory(exchange);
         } 
+        // 삭제 요청 처리
+        else if ("DELETE".equalsIgnoreCase(method) && path.endsWith("/history")){
+            handleDeleteHistory(exchange);
+        }
         else {
             sendResponse(exchange, 405, "Method Not Allowed");
         }
@@ -85,4 +89,17 @@ public class PaymentHandler implements HttpHandler {
             os.write(bytes);
         }
     }
+    
+    // 삭제 처리 핸들러
+    private void handleDeleteHistory(HttpExchange exchange) throws IOException {
+        try {
+            paymentService.clearAllHistory();
+            String response = gson.toJson("모든 결제 내역이 초기화되었습니다.");
+            sendResponse(exchange, 200, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendResponse(exchange, 500, "삭제 중 오류 발생");
+        }
+    }
+    
 }
