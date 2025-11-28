@@ -93,7 +93,8 @@ public class PaymentHandler implements HttpHandler {
     // 삭제 처리 핸들러
     private void handleDeleteHistory(HttpExchange exchange) throws IOException {
         try {
-            paymentService.clearAllHistory();
+            paymentService.clearAllHistory(); // 서비스에게 삭제 명령
+            
             String response = gson.toJson("모든 결제 내역이 초기화되었습니다.");
             sendResponse(exchange, 200, response);
         } catch (Exception e) {
