@@ -19,6 +19,13 @@ import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.JsonFileManager;
 
+// 예약 관련 import
+import com.team3.handler.ReservationHandler;
+import com.team3.model.Reservation;
+import com.team3.repository.JsonReservationRepository;
+import com.team3.repository.ReservationRepository;
+import com.team3.service.ReservationService;
+
 
 /**
  * HMS 서버 애플리케이션의 메인 엔트리 포인트 클래스
@@ -160,6 +167,12 @@ public class Main {
                 .addHandler("/api/users/get-users", dependencies.userHandler)
                 .addHandler("/api/users/add-user", dependencies.userHandler)
                 .addHandler("/api/users/delete-user", dependencies.userHandler)
+                // 예약 API 주소 등록
+                .addHandler("/api/reservation/create", dependencies.reservationHandler)
+                .addHandler("/api/reservation/list", dependencies.reservationHandler)
+                .addHandler("/api/reservation/delete", dependencies.reservationHandler)
+                .addHandler("/api/reservation/update", dependencies.reservationHandler)
+                // 추가 끝
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -432,61 +445,76 @@ public class Main {
      * @since 2025-11-19
      */
     private static class Dependencies {
-        /** 데이터를 저장할 파일의 경로. 프로젝트 루트 디렉토리 기준으로 작성 */
         private static final String DATA_FILE = "data/users.json";
-        
+        private static final String RESERVATION_FILE = "data/reservations.json";
+
+        // 1. User 관련 필드
         final JsonFileManager<User> jsonFileManager;
         final UserRepository userRepository;
-
         final TokenService tokenService;
         final UserService userService;
-
         final HealthCheckHandler healthCheckHandler;
         final UserHandler userHandler;
 
+        // 2. Reservation 관련 필드
+        final JsonFileManager<Reservation> reservationFileManager;
+        final ReservationRepository reservationRepository;
+        final ReservationService reservationService;
+        final ReservationHandler reservationHandler;
 
-        /**
-         * 모든 의존성을 초기화하는 생성자
-         * 
-         * <p>
-         * 의존성 체인을 따라 순차적으로 객체를 생성한다:
-         * </p>
-         * 
-         * @throws RuntimeException 의존성 초기화 실패 시
-         */
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
             try {
-                logger.info("JsonFileManager 생성");
-                this.jsonFileManager = new JsonFileManager<>(
-                    DATA_FILE, 
-                    new TypeToken<List<User>>() {}
-                );
+                // 파일 매니저 생성
+                logger.info("1. 파일 매니저 생성");
+                this.jsonFileManager = new JsonFileManager<>(DATA_FILE, new TypeToken<List<User>>() {});
+                this.reservationFileManager = new JsonFileManager<>(RESERVATION_FILE, new TypeToken<List<Reservation>>() {});
 
-                logger.info("userRepository 생성");
+                // 리포지토리 생성 (파일 매니저 필요)
+                logger.info("2. 리포지토리 생성");
                 this.userRepository = new JsonUserRepository(jsonFileManager);
+                this.reservationRepository = new JsonReservationRepository(reservationFileManager);
 
-                logger.info("TokenService 생성");
+                // 서비스 생성 (리포지토리 필요)
+                logger.info("3. 서비스 생성");
+                // TokenService가 가장 먼저 생성
                 this.tokenService = new TokenService(userRepository);
-
-                logger.info("UserService 생성");
-                this.userService = new UserService(userRepository, tokenService);
-
-                logger.info("HealthCheckHandler 생성");
-                this.healthCheckHandler = new HealthCheckHandler(tokenService);
-
-                logger.info("UserHandler 생성");
-                this.userHandler = new UserHandler(userService, tokenService);
-
-                logger.info("=== 의존성 초기화 완료 ===\n");
                 
-            } catch (NullPointerException e) {
-                logger.error("의존성 초기화 실패: {}", e.getMessage());
-                throw new RuntimeException("Failed to initialize dependencies", e);
+                // 그 다음 UserService와 ReservationService 생성
+                this.userService = new UserService(userRepository, tokenService);
+                this.reservationService = new ReservationService(reservationRepository);
+
+                // 핸들러 생성 (서비스 필요 - 이때 서비스들은 이미 null이 아님)
+                logger.info("4. 핸들러 생성");
+                this.healthCheckHandler = new HealthCheckHandler(tokenService);
+                this.userHandler = new UserHandler(userService, tokenService);
+                
+                // 
+                this.reservationHandler = new ReservationHandler(reservationService, tokenService);
+
+                // 초기 데이터 설정
+                initializeAdminAccount();
+
+                logger.info("=== 의존성 초기화 완료 ===");
+
             } catch (Exception e) {
-                logger.error("의존성 초기화 실패: {}", e.getMessage());
-                throw new RuntimeException("Failed to initialize dependencies", e);
+                logger.error("의존성 초기화 중 치명적 오류 발생", e);
+                // 여기서 프로그램을 종료시켜야 원인을 알 수 있음
+                throw new RuntimeException("Failed to initialize dependencies: " + e.getMessage(), e);
             }
         }
-    }
+
+        // 관리자 계정 생성 메서드
+        private void initializeAdminAccount() {
+            try {
+                if (userRepository.findById("admin").isEmpty()) {
+                    User admin = new User("admin", "admin", "관리자", User.Role.ADMIN);
+                    userService.addUser(admin);
+                    logger.info("[SYSTEM] 초기 관리자 계정 생성됨 (admin / admin)");
+                }
+            } catch (Exception e) {
+                logger.warn("관리자 계정 확인 중 오류 (무시 가능): {}", e.getMessage());
+            }
+       }
+   }
 }
