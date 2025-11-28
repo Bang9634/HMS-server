@@ -95,12 +95,30 @@ public class PaymentHandler implements HttpHandler {
         }
     }
 
-    private void handleDeleteHistory(HttpExchange exchange) throws IOException {
+  private void handleDeleteHistory(HttpExchange exchange) throws IOException {
         try {
-            paymentService.clearAllHistory();
-            String response = gson.toJson("모든 결제 내역이 초기화되었습니다.");
-            sendResponse(exchange, 200, response);
-            logger.info("전체 결제 내역 초기화 완료");
+            String query = exchange.getRequestURI().getQuery(); // ?guestName=... 부분을 가져옴
+            
+            if (query != null && query.contains("guestName=")) {
+                // 1. 특정인 삭제 로직
+                String guestName = query.split("=")[1];
+                // 한글 깨짐 방지를 위해 디코딩
+                guestName = java.net.URLDecoder.decode(guestName, StandardCharsets.UTF_8);
+                
+                paymentService.deletePaymentByGuestName(guestName);
+                
+                String response = gson.toJson(guestName + "님의 내역이 삭제되었습니다.");
+                sendResponse(exchange, 200, response);
+                logger.info("특정 결제 내역 삭제 완료: {}", guestName);
+                
+            } else {
+                // 2. 기존 전체 삭제 로직
+                paymentService.clearAllHistory();
+                String response = gson.toJson("모든 결제 내역이 초기화되었습니다.");
+                sendResponse(exchange, 200, response);
+                logger.info("전체 결제 내역 초기화 완료");
+            }
+            
         } catch (Exception e) {
             logger.error("내역 삭제 중 오류 발생", e);
             sendResponse(exchange, 500, "Error deleting history");

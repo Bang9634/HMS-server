@@ -61,4 +61,19 @@ public class JsonPaymentRepository implements PaymentRepository {
             throw new RuntimeException("Delete all failed", e);
         }
     }
+    
+    @Override
+    public void deleteByGuestName(String guestName) {
+        try {
+            List<Payment> payments = fileManager.readAll();
+            if (payments != null) {
+                // 자바의 removeIf 기능을 써서 이름이 같은 걸 다 지움
+                payments.removeIf(p -> p.getGuestName().equals(guestName));
+                fileManager.writeAll(payments);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Delete specific failed", e);
+        }
+    }
+    
 }

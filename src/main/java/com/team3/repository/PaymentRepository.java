@@ -17,6 +17,9 @@ public interface PaymentRepository {
     // 저장소에 있는 모든 결제 내역을 가져오라고 명령하는 메서드
     List<Payment> findAll();
     
-    // 모든 결제 내역 삭제
+    // 모든 결제 내역 삭제(초기화)
     void deleteAll();
+    
+    // 원하는 결제 내역(이름 검색) 삭제
+    void deleteByGuestName(String guestName);
 }

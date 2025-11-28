@@ -68,4 +68,12 @@ public class PaymentService {
     public void clearAllHistory(){
         paymentRepository.deleteAll();
     }
+    
+    /*
+    * 선택 결제 내역 삭제
+    */
+    public void deletePaymentByGuestName(String guestName) {
+    paymentRepository.deleteByGuestName(guestName);
+    }
+    
 }
