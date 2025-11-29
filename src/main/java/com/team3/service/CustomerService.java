@@ -1,6 +1,8 @@
 package com.team3.service;
 
+import java.time.LocalDateTime; // 시간 사용을 위해 필요
 import java.util.List;
+import java.util.UUID;          // ID 생성을 위해 필요
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.team3.model.Customer;
@@ -22,6 +24,14 @@ public class CustomerService {
         if (customer.getPhoneNumber() == null || customer.getPhoneNumber().trim().isEmpty()) {
             throw new IllegalArgumentException("전화번호는 필수입니다.");
         }
+
+        if (customer.getId() == null) {
+            customer.setId(UUID.randomUUID().toString());
+        }
+        if (customer.getCreatedAt() == null) {
+            customer.setCreatedAt(LocalDateTime.now().toString());
+        }
+
         return customerRepository.save(customer);
     }
 

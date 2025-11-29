@@ -40,4 +40,8 @@ public class Customer {
     public String getFeedback() { return feedback; }
     public void setFeedback(String feedback) { this.feedback = feedback; }
     public String getCreatedAt() { return createdAt; }
+
+    public void setCreatedAt(String createdAt) {
+    this.createdAt = createdAt;
+}
 }
