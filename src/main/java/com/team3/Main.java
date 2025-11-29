@@ -1,6 +1,5 @@
 package com.team3;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,36 +8,40 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
-import com.team3.handler.FnbHandler;
 import com.team3.handler.CustomerHandler;
+import com.team3.handler.FnbHandler;
 import com.team3.handler.HealthCheckHandler;
+import com.team3.handler.PaymentHandler;
 import com.team3.handler.ReservationHandler;
 import com.team3.handler.RoomHandler;
 import com.team3.handler.UserHandler;
+import com.team3.model.Customer;
 import com.team3.model.FnbItem;
+import com.team3.model.Payment;
 import com.team3.model.Reservation;
 import com.team3.model.Room;
 import com.team3.model.User;
+import com.team3.repository.CustomerRepository;
 import com.team3.repository.FnbRepository;
+import com.team3.repository.JsonCustomerRepository;
 import com.team3.repository.JsonFnbRepository;
+import com.team3.repository.JsonPaymentRepository;
 import com.team3.repository.JsonReservationRepository;
 import com.team3.repository.JsonRoomRepository;
 import com.team3.repository.JsonUserRepository;
+import com.team3.repository.PaymentRepository;
 import com.team3.repository.ReservationRepository;
 import com.team3.repository.RoomRepository;
 import com.team3.repository.UserRepository;
-import com.team3.server.HmsServer;
-import com.team3.service.FnbService;
-import com.team3.service.ReservationService;
+import com.team3.server.HmsServer; // [추가]
+import com.team3.service.CustomerService;        // [추가]
+import com.team3.service.FnbService; // [추가]
+import com.team3.service.PaymentService;     // [추가]
+import com.team3.service.ReservationService; // [추가]
 import com.team3.service.RoomService;
 import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.JsonFileManager;
-import com.team3.model.Customer;
-import com.team3.repository.CustomerRepository;
-import com.team3.repository.JsonCustomerRepository;
-import com.team3.service.CustomerService;
-
 
 /**
  * HMS 서버 애플리케이션의 메인 엔트리 포인트 클래스
@@ -46,26 +49,18 @@ import com.team3.service.CustomerService;
  * hms 서버의 시작점 역할을 담당한다.
  * 시스템 초기화, 설정 로딩, 서버 생성 및 시작을 관리하며,
  * </p>
- * 
- * <h3>실행 방법:</h3>
+ * * <h3>실행 방법:</h3>
  * <pre>{@code
  * # 기본 설정으로 실행
  * java -jar hms-server.jar
- * 
- * # 커스텀 포트로 실행
+ * * # 커스텀 포트로 실행
  * java -jar hms-server.jar [포트번호] [호스트주소]
- * 
- * }</pre>
- * 
- * 
- * 
- * @author bang9634
+ * * }</pre>
+ * * * * @author bang9634
  * @since 2025-11-10
- * 
- * @see com.HmsServer.server.PlanPServer
+ * * @see com.HmsServer.server.PlanPServer
  * @see com.drhong.service.UserService
- * 
- * @implNote JVM 종료 시 자동으로 서버 리소스가 정리되도록 설계됨
+ * * @implNote JVM 종료 시 자동으로 서버 리소스가 정리되도록 설계됨
  */
 public class Main {
     
@@ -81,11 +76,11 @@ public class Main {
      * </p>
      */
     private static final String STARTUP_BANNER = """
-            ══════════════════════════════════════════════════════════════
-                                      HMS Server                           
-                                 서버 시작 중...                           
-            ══════════════════════════════════════════════════════════════
-            """;
+             ══════════════════════════════════════════════════════════════
+                                      HMS Server                                  
+                                  서버 시작 중...                                  
+             ══════════════════════════════════════════════════════════════
+             """;
  
 
     /**
@@ -102,45 +97,36 @@ public class Main {
      * 커맨드라인 인수가 잘못된 값이면 예외를 던진다.
      * 커맨드라인 인수 사용법은 아래에 후술한다.
      * </p>
-     * 
-     * <h3>실행 단계:</h3>
+     * * <h3>실행 단계:</h3>
      * <ol>
-     *   <li>시작 배너 출력</li>
-     *   <li>설정값 파싱 (포트, 호스트)</li>
-     *   <li>데이터베이스 초기화</li>
-     *   <li>서비스 초기화</li>
-     *   <li>HTTP 서버 생성</li>
-     *   <li>서버 시작 및 대기</li>
+     * <li>시작 배너 출력</li>
+     * <li>설정값 파싱 (포트, 호스트)</li>
+     * <li>데이터베이스 초기화</li>
+     * <li>서비스 초기화</li>
+     * <li>HTTP 서버 생성</li>
+     * <li>서버 시작 및 대기</li>
      * </ol>
-     * 
-     * <h3>종료 코드:</h3>
+     * * <h3>종료 코드:</h3>
      * <ul>
-     *   <li><strong>0:</strong> 정상 종료</li>
-     *   <li><strong>1:</strong> 서버 시작 실패</li>
+     * <li><strong>0:</strong> 정상 종료</li>
+     * <li><strong>1:</strong> 서버 시작 실패</li>
      * </ul>
-     * 
-     * <h3>커맨드라인 인수:</h3>
+     * * <h3>커맨드라인 인수:</h3>
      * <pre>{@code
      * java -jar hms-server.jar [포트번호] [호스트주소]
-     * 
-     * # 예시:
+     * * # 예시:
      * java -jar hms-server.jar 8080 0.0.0.0  # 포트 8080, 호스트 주소 0.0.0.0으로 시작
      * java -jar hms-server.jar               # 환경변수 또는 기본값으로 시작
      * }</pre>
      * @param args 커맨드라인 인수 배열 (선택적 포트 번호 포함)
-     * 
-     * @exception IllegalArgumentException 포트 번호 및 호스트주소가 유효하지않거나,
-     *                                     데이터 베이스 연결 설정이 잘못된 경우
-     * 
-     * @exception SecurityException 프로그램의 권한이 부족한 경우
-     * 
-     * @exception IOException 포트가 이미 사용 중 혹은 호스트 주소를 찾을 수 없거나
-     *                        서버 소켓 생성 실패, 네트워크 인터페이스가 사용 불가능한 경우
-     * 
-     * @exception RuntimeException 데이터베이스 초기화 실패 (MySQL 연결 불가) 또는
-     *                             서비스 초기화 실패, 예상지 못한 시스템 오류가 발생하는 경우
-     * 
-     * @apiNote 이 메서드는 블로킹되며, 서버가 종료될 때까지 반환되지 않음
+     * * @exception IllegalArgumentException 포트 번호 및 호스트주소가 유효하지않거나,
+     * 데이터 베이스 연결 설정이 잘못된 경우
+     * * @exception SecurityException 프로그램의 권한이 부족한 경우
+     * * @exception IOException 포트가 이미 사용 중 혹은 호스트 주소를 찾을 수 없거나
+     * 서버 소켓 생성 실패, 네트워크 인터페이스가 사용 불가능한 경우
+     * * @exception RuntimeException 데이터베이스 초기화 실패 (MySQL 연결 불가) 또는
+     * 서비스 초기화 실패, 예상지 못한 시스템 오류가 발생하는 경우
+     * * @apiNote 이 메서드는 블로킹되며, 서버가 종료될 때까지 반환되지 않음
      */
     public static void main(String[] args) {
         // 시작 배너 출력
@@ -181,6 +167,8 @@ public class Main {
                 .addHandler("/api/reservation", dependencies.reservationHandler)
                 .addHandler("/api/fnb", dependencies.fnbHandler)
                 .addHandler("/api/customer", dependencies.customerHandler)
+                .addHandler("/api/payments", dependencies.paymentHandler)
+
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -191,6 +179,7 @@ public class Main {
             System.out.printf("\n서버가 http://%s:%d 에서 시작되었습니다\n", host, port);
             System.out.println("Health Check: http://" + host + ":" + port + "/health");
             System.out.println("API Endpoint: http://" + host + ":" + port + "/api/");
+            System.out.println("Payment API: http://" + host + ":" + port + "/api/payments/process"); // [추가]
             System.out.println("종료하려면 Ctrl+C를 누르세요.\n");
             
             // 서버 시작 (블로킹 - 여기서 프로그램이 대기)
@@ -203,13 +192,6 @@ public class Main {
             System.err.println("오류 타입: " + e.getClass().getSimpleName());
             logger.error("애플리케이션 비정상 종료 - 종료 코드: 1");
             System.exit(1);
-        } catch (SecurityException | IOException e) {
-            logger.error("서버 시작 중 Security, IO 오류 발생", e);
-            System.err.println("\n서버 시작 중 Security, IO 오류 발생");
-            System.err.println("오류 메시지: " + e.getMessage());
-            System.err.println("오류 타입: " + e.getClass().getSimpleName());
-            logger.error("애플리케이션 비정상 종료 - 종료 코드: 1");
-            System.exit(1);
         }  catch (RuntimeException e) {
             logger.error("서버 시작 중 Runtime 오류 발생", e);
             System.err.println("\n서버 시작 중 Runtime 오류 발생");
@@ -217,20 +199,24 @@ public class Main {
             System.err.println("오류 타입: " + e.getClass().getSimpleName());
             logger.error("애플리케이션 비정상 종료 - 종료 코드: 1");
             System.exit(1);
+        } catch (Exception e) {
+            logger.error("서버 시작 중 알 수 없는 오류 발생", e);
+            System.err.println("\n서버 시작 중 알 수 없는 오류 발생");
+            System.err.println("오류 메시지: " + e.getMessage());
+            System.exit(1);
         }
     }
 
     /**
      * 의존성을 초기화하는 메서드
-     * 
-     * <p>
+     * * <p>
      * 의존성 주입이 필요한 클래스들을 초기화한다.
      * </p>
      * @return 의존성 주입된 클래스
      */
     private static Dependencies initializDependencies() {
         System.out.println("\n=== 의존성 초기화 시작 ===\n");
-    
+        
         try {
             // Dependencies 생성 (내부에서 모든 의존성 초기화)
             Dependencies deps = new Dependencies();
@@ -255,25 +241,20 @@ public class Main {
      * 1. 커맨드라인 인수 > 2. 환경변수 > 3. 기본값
      * 잘못된 포트 번호가 제공된 경우 경고 메시지와 함께 예외를 던진다.
      * </p>
-     * 
-     * <h4>검증 규칙:</h4>
+     * * <h4>검증 규칙:</h4>
      * <ul>
-     *   <li>1-65535 범위의 정수여야 함</li>
-     *   <li>1024 미만은 관리자 권한 필요 (경고 표시)</li>
-     *   <li>잘못된 형식은 기본값으로 대체</li>
+     * <li>1-65535 범위의 정수여야 함</li>
+     * <li>1024 미만은 관리자 권한 필요 (경고 표시)</li>
+     * <li>잘못된 형식은 기본값으로 대체</li>
      * </ul>
-     * 
-     * <h4>환경변수:</h4>
+     * * <h4>환경변수:</h4>
      * <ul>
-     *   <li><code>HMS_SERVER_PORT</code>: 포트 번호 (예: 3000, 8080)</li>
+     * <li><code>HMS_SERVER_PORT</code>: 포트 번호 (예: 3000, 8080)</li>
      * </ul>
-     * 
-     * @param args 커맨드라인 인수 배열
+     * * @param args 커맨드라인 인수 배열
      * @return 사용할 포트 번호 (1-65535 범위)
-     * 
-     * @exception NumberFormatException 잘못된 포트 번호 형식이 인자로 들어오는 경우
-     * 
-     * @apiNote 시스템 포트(1-1023) 사용 시 관리자 권한이 필요할 수 있음
+     * * @exception NumberFormatException 잘못된 포트 번호 형식이 인자로 들어오는 경우
+     * * @apiNote 시스템 포트(1-1023) 사용 시 관리자 권한이 필요할 수 있음
      * @apiNote 프론트엔드와 동일한 포트 사용 시 충돌 발생할 수 있음
      */
     private static int getPortFromArgs(String[] args) {
@@ -317,17 +298,14 @@ public class Main {
      * 1. 커맨드라인 인수 > 2. 환경변수 > 3. 기본값
      * 기본값으로 localhost를 사용하며, 프로덕션에서는 환경변수 설정으로 변경 가능하다.
      * </p>
-     * 
-     * <h4>커맨드라인 사용법:</h4>
+     * * <h4>커맨드라인 사용법:</h4>
      * <pre>{@code
      * java -jar hms-server.jar [포트] [호스트]
-     * 
-     * 예시:
+     * * 예시:
      * java -jar hms-server.jar 8080 localhost
      * java -jar hms-server.jar 3000 0.0.0.0
      * }</pre>
-     * 
-     * @param args 커맨드라인 인수 배열 (두 번째 인수로 호스트 지정 가능)
+     * * @param args 커맨드라인 인수 배열 (두 번째 인수로 호스트 지정 가능)
      * @return 사용할 호스트 주소 문자열
      */
     private static String getHostFromArgs(String[] args) {
@@ -372,8 +350,7 @@ public class Main {
      * 포트번호가 1-65535 범위를 넘어가면 예외를 던진다.
      * </p>
      * @param port 검증할 포트번호
-     * 
-     * @exception IllegalArgumentException 범위를 벗어난 유효하지 않은 포트 번호인 경우
+     * * @exception IllegalArgumentException 범위를 벗어난 유효하지 않은 포트 번호인 경우
      */
     private static void validatePort(int port) {
         if (port < 1 || port > 65535) {
@@ -388,8 +365,7 @@ public class Main {
      * 예외를 던진다.
      * </p>
      * @param host 검증할 호스트 주소
-     * 
-     * @exception IllegalArgumentException 호스트 주소가 비어있거나, 공백이 포함되어 있는 경우
+     * * @exception IllegalArgumentException 호스트 주소가 비어있거나, 공백이 포함되어 있는 경우
      */
     private static void validateHost(String host) {
         if (host == null || host.trim().isEmpty()) {
@@ -407,21 +383,17 @@ public class Main {
      * Ctrl+C나 SIGTERM 신호를 받았을 때 서버를 안전하게 종료한다.
      * 진행 중인 요청들이 완료될 때까지 대기한 후 리소스를 정리한다.
      * </p>
-     * 
-     * <h4>종료 과정:</h4>
+     * * <h4>종료 과정:</h4>
      * <ol>
-     *   <li>종료 신호 수신</li>
-     *   <li>새로운 요청 수신 중단</li>
-     *   <li>진행 중인 요청 완료 대기</li>
-     *   <li>서버 리소스 정리</li>
-     *   <li>종료 완료 메시지 출력</li>
+     * <li>종료 신호 수신</li>
+     * <li>새로운 요청 수신 중단</li>
+     * <li>진행 중인 요청 완료 대기</li>
+     * <li>서버 리소스 정리</li>
+     * <li>종료 완료 메시지 출력</li>
      * </ol>
-     * 
-     * @param server 종료할 PlanPServer 인스턴스
-     * 
-     * @exception Exception 서버 종류 중 예상치 못한 오류가 발생한 경우
-     * 
-     * @implNote Runtime.addShutdownHook()을 사용하여 JVM 레벨에서 관리
+     * * @param server 종료할 PlanPServer 인스턴스
+     * * @exception Exception 서버 종류 중 예상치 못한 오류가 발생한 경우
+     * * @implNote Runtime.addShutdownHook()을 사용하여 JVM 레벨에서 관리
      */
     private static void registerShutdownHook(HmsServer server) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -435,6 +407,7 @@ public class Main {
                 System.out.println("서버가 안전하게 종료되었습니다.");
                 System.out.println("HMS Server를 사용해 주셔서 감사합니다!");
             } catch (Exception e) {
+                logger.error("서버 종료 중 오류 발생", e);
                 System.err.println("서버 종료 중 오류: " + e.getMessage());
             }
         }, "shutdown-hook"));
@@ -444,12 +417,10 @@ public class Main {
 
     /**
      * 애플리케이션 의존성 컨테이너
-     * 
-     * <p>
+     * * <p>
      * 초기화된 모든 의존성 객체들을 담는 컨테이너 클래스다.
      * </p>
-     * 
-     * @author bang9634
+     * * @author bang9634
      * @since 2025-11-19
      */
     private static class Dependencies {
@@ -459,9 +430,10 @@ public class Main {
         private static final String RESERVATION_FILE = "data/reservations.json";
         private static final String FNB_FILE = "data/fnb.json";
         private static final String CUSTOMER_FILE = "data/customers.json";
+        private static final String PAYMENT_DATA_FILE = "data/payments.json";
         
         final TokenService tokenService;
-
+        
         final HealthCheckHandler healthCheckHandler;
 
         final JsonFileManager<User> userJsonFileManager;
@@ -490,6 +462,12 @@ public class Main {
         final CustomerRepository customerRepository;
         final CustomerService customerService;
         final CustomerHandler customerHandler;
+        // [추가] Payment 관련 필드
+        final JsonFileManager<Payment> paymentJsonFileManager;
+        final PaymentRepository paymentRepository;
+        final PaymentService paymentService;
+        final PaymentHandler paymentHandler;
+
 
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
@@ -523,11 +501,19 @@ public class Main {
                 this.fnbRepository = new JsonFnbRepository(fnbFileManager);
                 this.fnbService = new FnbService(fnbRepository);
                 this.fnbHandler = new FnbHandler(fnbService);
+
                 logger.info("Customer 생성");
                 this.customerFileManager = new JsonFileManager<>(CUSTOMER_FILE, new TypeToken<List<Customer>>() {});
                 this.customerRepository = new JsonCustomerRepository(customerFileManager);
                 this.customerService = new CustomerService(customerRepository);
                 this.customerHandler = new CustomerHandler(customerService);
+
+                logger.info("Payment System 초기화...");
+                this.paymentJsonFileManager = new JsonFileManager<>(PAYMENT_DATA_FILE,new TypeToken<List<Payment>>() {});
+                this.paymentRepository = new JsonPaymentRepository(paymentJsonFileManager);
+                this.paymentService = new PaymentService(paymentRepository);
+                this.paymentHandler = new PaymentHandler(paymentService, tokenService);
+
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
             } catch (Exception e) {
