@@ -6,9 +6,9 @@ import java.util.List;
 
 public class Room {
     private final int roomId;
-    private final int basePrice;
-    private final boolean isAvailable;
-    private final int maxOccupancy;
+    private int basePrice;
+    private  boolean isAvailable;
+    private  int maxOccupancy;
     private final List<PriceChangeLog> priceChangeLogs = new ArrayList<>();
 
     public Room(
@@ -32,6 +32,10 @@ public class Room {
     public boolean isAvailable() {return isAvailable; }
     public int getMaxOccupancy() { return maxOccupancy; }
     public List<PriceChangeLog> getPriceChangeLogs() { return priceChangeLogs; }
+
+    public void setBasePrice(int basePrice) { this.basePrice = basePrice; }
+    public void setIsAvailable(boolean isAvailable) { this.isAvailable = isAvailable; }
+    public void setMaxOccupancy(int maxOccupancy) { this.maxOccupancy = maxOccupancy; }
 
     public void addPriceChangeLog(int oldPrice, int newPrice, String reason) {
         priceChangeLogs.add(new PriceChangeLog(oldPrice, newPrice, LocalDateTime.now(), reason));

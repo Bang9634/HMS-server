@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.team3.model.PriceChangeLog;
@@ -71,6 +73,8 @@ public class RoomHandler implements HttpHandler {
                 handleAddRoom(exchange);
             } else if (path.endsWith("/delete-room") && "POST".equals(method)) {
                 handleDeleteRoom(exchange);
+            } else if (path.endsWith("/update-room") && "POST".equals(method)) {
+                handleUpdateRoom(exchange);
             } else if (path.endsWith("/get-price-change-logs") && "POST".equals(method)) {
                 handleGetPriceChangeLogs(exchange);
             } else {
@@ -195,6 +199,52 @@ public class RoomHandler implements HttpHandler {
         response.put("message", "삭제 성공");
         response.put("rooms", roomService.getRooms());
         logger.info("객실 삭제 성공: token={}", token);
+        
+        // response를 클라이언트에게 전송
+        HttpResponseHelper.sendJsonResponse(exchange, 200, response);
+    }
+
+
+    /**
+     * 객실 추가 요청을 처리하는 메서드
+     * 
+     * @param exchange HTTP 교환 객체
+     * @throws IOException
+     */
+    private void handleUpdateRoom(HttpExchange exchange) throws IOException {
+        logger.info("객실 수정 시도");
+        
+        // 인증 토큰 유효성 검증
+        logger.debug("인증 토큰 유효성 검증 시도...");
+        String token = HttpRequestHelper.extractBearerToken(exchange);
+        Optional<User> user = tokenService.validateToken(token);
+        if (user.isEmpty()) {
+            logger.debug("인증 토큰 유효하지 않음");
+            HttpResponseHelper.sendErrorResponse(exchange, 401, "인증 토큰이 유효하지 않습니다.");
+            return;
+        }
+
+        // request의 body에서 로그인 정보 추출
+        String requestBody = HttpRequestHelper.readRequestBody(exchange);
+        logger.debug("객실 수정 요청 본문 수신: length={}", requestBody.length());
+
+        JsonObject jsonObj = JsonParser.parseString(requestBody).getAsJsonObject();
+        String priceChangeReason = jsonObj.has("reason") ? jsonObj.get("reason").getAsString() : null;
+        jsonObj.remove("reason");
+
+        Room roomUpdated = gson.fromJson(requestBody, Room.class);
+        if (!roomService.updateRoom(roomUpdated, priceChangeReason)) {
+            logger.warn("객실 수정 실패: 객실이 존재하지 않음.");
+            HttpResponseHelper.sendErrorResponse(exchange, 401, "존재하지 않는 객실입니다.");
+            return;
+        }
+
+        // response 객체 생성
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "수정 성공");
+        response.put("rooms", roomService.getRooms());
+        logger.info("객실 수정 성공: token={}", token);
         
         // response를 클라이언트에게 전송
         HttpResponseHelper.sendJsonResponse(exchange, 200, response);
