@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.reflect.TypeToken;
 import com.team3.config.EnvironmentConfig;
 import com.team3.handler.FnbHandler;
+import com.team3.handler.CustomerHandler;
 import com.team3.handler.HealthCheckHandler;
 import com.team3.handler.ReservationHandler;
 import com.team3.handler.RoomHandler;
@@ -33,6 +34,10 @@ import com.team3.service.RoomService;
 import com.team3.service.TokenService;
 import com.team3.service.UserService;
 import com.team3.util.JsonFileManager;
+import com.team3.model.Customer;
+import com.team3.repository.CustomerRepository;
+import com.team3.repository.JsonCustomerRepository;
+import com.team3.service.CustomerService;
 
 
 /**
@@ -175,6 +180,7 @@ public class Main {
                 .addHandler("/api/rooms", dependencies.roomHandler)
                 .addHandler("/api/reservation", dependencies.reservationHandler)
                 .addHandler("/api/fnb", dependencies.fnbHandler)
+                .addHandler("/api/customer", dependencies.customerHandler)
                 .build();
 
             System.out.println("\nHTTP 서버 생성 완료");
@@ -452,6 +458,7 @@ public class Main {
         private static final String ROOM_DATA_FILE = "data/rooms.json";
         private static final String RESERVATION_FILE = "data/reservations.json";
         private static final String FNB_FILE = "data/fnb.json";
+        private static final String CUSTOMER_FILE = "data/customers.json";
         
         final TokenService tokenService;
 
@@ -478,6 +485,11 @@ public class Main {
         final FnbRepository fnbRepository;
         final FnbService fnbService;
         final FnbHandler fnbHandler;
+        // Customer 관련 필트
+        final JsonFileManager<Customer> customerFileManager;
+        final CustomerRepository customerRepository;
+        final CustomerService customerService;
+        final CustomerHandler customerHandler;
 
         private Dependencies() {
             logger.info("=== 의존성 초기화 시작 ===");
@@ -511,6 +523,11 @@ public class Main {
                 this.fnbRepository = new JsonFnbRepository(fnbFileManager);
                 this.fnbService = new FnbService(fnbRepository);
                 this.fnbHandler = new FnbHandler(fnbService);
+                logger.info("Customer 생성");
+                this.customerFileManager = new JsonFileManager<>(CUSTOMER_FILE, new TypeToken<List<Customer>>() {});
+                this.customerRepository = new JsonCustomerRepository(customerFileManager);
+                this.customerService = new CustomerService(customerRepository);
+                this.customerHandler = new CustomerHandler(customerService);
 
                 logger.info("=== 의존성 초기화 완료 ===\n");
             } catch (Exception e) {
