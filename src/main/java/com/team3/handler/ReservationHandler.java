@@ -73,14 +73,14 @@ public class ReservationHandler implements HttpHandler {
 
             // 2. 라우팅 (UserHandler와 같은 방식)
             if (path.endsWith("/create") && "POST".equals(method)) {
-                handleCreate(exchange, user.get());
+                handleCreate(exchange);
             } else if (path.endsWith("/list") && "GET".equals(method)) {
-                handleList(exchange, user.get());
+                handleList(exchange);
             } else if (path.endsWith("/delete") && "POST".equals(method)) {
-                handleDelete(exchange, user.get());
+                handleDelete(exchange);
             } 
             else if (path.endsWith("/update") && "POST".equals(method)) {
-                handleUpdate(exchange, user.get());
+                handleUpdate(exchange);
             }
             else {
                 logger.warn("잘못된 경로 또는 메서드: {} {}", method, path);
@@ -96,15 +96,14 @@ public class ReservationHandler implements HttpHandler {
     /**
      * 예약 생성 (POST /api/reservation/create)
      */
-    private void handleCreate(HttpExchange exchange, User user) throws IOException {
+    private void handleCreate(HttpExchange exchange) throws IOException {
         try {
             String body = HttpRequestHelper.readRequestBody(exchange);
             logger.debug("예약 생성 요청 데이터: {}", body);
 
             Reservation res = gson.fromJson(body, Reservation.class);
             
-            // 보안: 요청한 사람의 ID를 예약자 ID로 강제 설정 (다른 사람 명의 예약 방지)
-            res.setUserId(user.getUserId());
+
 
             if (reservationService.createReservation(res)) {
                 Map<String, Object> response = new HashMap<>();
@@ -127,8 +126,8 @@ public class ReservationHandler implements HttpHandler {
     /**
      * 예약 목록 조회 (GET /api/reservation/list)
      */
-    private void handleList(HttpExchange exchange, User user) throws IOException {
-        logger.info("예약 목록 조회 요청: user={}", user.getUserId());
+    private void handleList(HttpExchange exchange) throws IOException {
+        logger.info("예약 목록 조회 요청");
         
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -143,7 +142,7 @@ public class ReservationHandler implements HttpHandler {
     /**
      * 예약 취소 (POST /api/reservation/delete)
      */
-    private void handleDelete(HttpExchange exchange, User user) throws IOException {
+    private void handleDelete(HttpExchange exchange) throws IOException {
         try {
             String body = HttpRequestHelper.readRequestBody(exchange);
             // 클라이언트가 {"id": "예약ID"} 형태로 보낸다고 가정
@@ -171,7 +170,7 @@ public class ReservationHandler implements HttpHandler {
     }
     
    /* 예약 수정 처리 (POST /api/reservation/update) */
-    private void handleUpdate(HttpExchange exchange, User user) throws IOException {
+    private void handleUpdate(HttpExchange exchange) throws IOException {
         try {
             // 1. 클라이언트가 보낸 수정 데이터 읽기
             String body = HttpRequestHelper.readRequestBody(exchange);
